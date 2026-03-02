@@ -1,7 +1,6 @@
 /** @format */
 
 import swaggerJSDoc from "swagger-jsdoc";
-import { hostName } from "../constants/constants.js";
 
 const swaggerDefinition = {
   openapi: "3.0.0",

@@ -39,7 +39,24 @@ export class App {
   }
 
   initiializeMiddlewares() {
-    this.app.use(helmet());
+    this.app.use(
+      helmet({
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: [
+              "'self'",
+              "'unsafe-inline'",
+              "https://cdn.jsdelivr.net",
+            ],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+            imgSrc: ["'self'", "data:", "https://cdn.jsdelivr.net"],
+            connectSrc: ["'self'"],
+            upgradeInsecureRequests: null,
+          },
+        },
+      }),
+    );
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(
@@ -88,17 +105,18 @@ export class App {
     this.app.use("/api/v1/carts", cartRouter);
     this.app.use("/api/v1/meals", mealRouter);
 
-    this.app.get("/api-docs", async (req, res) => {
+    this.app.get("/api-docs", async (_req, res) => {
       const filePath = fileURLToPath(import.meta.url);
       const _dirname = dirname(filePath);
       const templatePath = path.join(
         _dirname,
-        "src/util/",
-        "swagger-template.util.html",
+        "src/util",
+        "swagger-template.html",
       );
 
       try {
         const template = await fs.readFile(templatePath, "utf-8");
+        await fs.writeFile("swagger.html", template);
         res.send(`${template}`);
       } catch (error: any) {
         res
