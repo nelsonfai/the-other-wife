@@ -97,8 +97,8 @@ class UserRouter {
   constructor() {
     this.userController = new UserController();
     this.router = Router();
-    this.initializeRoutes();
     this.router.use(authMiddleware);
+    this.initializeRoutes();
   }
 
   initializeRoutes() {

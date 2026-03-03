@@ -20,6 +20,7 @@ const VendorSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     unique: true,
+    index: true,
     required: true,
   },
   addressId: {

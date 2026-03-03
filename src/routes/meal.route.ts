@@ -105,6 +105,7 @@ class MealRouter {
     this.router = Router();
     this.mealController = new MealController();
     this.router.use(authMiddleware);
+    this.initializeRoutes();
   }
 
   initializeRoutes() {

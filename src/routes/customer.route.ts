@@ -161,8 +161,8 @@ class CustomerRouter {
   constructor() {
     this.customerController = new CustomerController();
     this.router = Router();
-    this.initializeRoutes();
     this.router.use(authMiddleware);
+    this.initializeRoutes();
   }
 
   initializeRoutes() {

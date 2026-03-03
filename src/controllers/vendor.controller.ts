@@ -14,13 +14,9 @@ export class VendorController {
 
   getVendorProfile = handleAsyncControl(
     async (req: Request<{ id: string }>, res: Response): Promise<Response> => {
-      const vendorId = req.params.id;
       const userId = req?.user?._id as unknown as string;
       try {
-        const vendor = await this.vendorService.getVendorProfile(
-          vendorId,
-          userId,
-        );
+        const vendor = await this.vendorService.getVendorProfile(userId);
         return res.status(HttpStatus.OK).json({
           status: "ok",
           message: "Vendor profile retrieved successfully",
@@ -61,18 +57,14 @@ export class VendorController {
       } = req.body;
 
       try {
-        const vendor = await this.vendorService.updateVendorProfile(
-          vendorId,
-          userId,
-          {
-            firstName,
-            lastName,
-            phoneNumber,
-            businessName,
-            businessDescription,
-            businessLogoUrl,
-          },
-        );
+        const vendor = await this.vendorService.updateVendorProfile(userId, {
+          firstName,
+          lastName,
+          phoneNumber,
+          businessName,
+          businessDescription,
+          businessLogoUrl,
+        });
         return res.status(HttpStatus.OK).json({
           status: "ok",
           message: "Vendor profile updated successfully",
@@ -158,12 +150,11 @@ export class VendorController {
   );
 
   deleteVendorProfile = handleAsyncControl(
-    async (req: Request<{ id: string }>, res: Response): Promise<Response> => {
-      const vendorId = req.params.id;
+    async (req: Request, res: Response): Promise<Response> => {
       const userId = req?.user?._id as unknown as string;
 
       try {
-        await this.vendorService.deleteVendorProfile(vendorId, userId);
+        await this.vendorService.deleteVendorProfile(userId);
         return res.status(HttpStatus.NO_CONTENT).send();
       } catch (error) {
         throw error;

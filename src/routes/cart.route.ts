@@ -172,9 +172,9 @@ export class CartRouter {
   constructor() {
     this.cartController = new CartController();
     this.router = Router();
-    this.initializeRoutes();
     this.router.use(authMiddleware);
     this.router.use(roleGuardMiddleware(["customer"]));
+    this.initializeRoutes();
   }
 
   initializeRoutes() {

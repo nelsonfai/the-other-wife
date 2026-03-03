@@ -267,8 +267,8 @@ class AddressRouter {
   constructor() {
     this.addressController = new AddressController();
     this.router = Router();
-    this.initializeRoutes();
     this.router.use(authMiddleware);
+    this.initializeRoutes();
   }
 
   initializeRoutes() {

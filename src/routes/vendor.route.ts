@@ -7,18 +7,10 @@ import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
 
 /**
  * @swagger
- * /api/v1/vendors/{id}:
+ * /api/v1/vendors/me:
  *   get:
  *     summary: Get vendor profile
  *     tags: [Vendor]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           required: true
- *           description: The vendor ID
  *     responses:
  *       "200":
  *         description: Vendor profile retrieved successfully
@@ -54,18 +46,10 @@ import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
 
 /**
  * @swagger
- * /api/v1/vendors/{id}:
+ * /api/v1/vendors/me:
  *   put:
  *     summary: Update vendor profile
  *     tags: [Vendor]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           required: true
- *           description: The vendor ID
  *     requestBody:
  *       required: true
  *       content:
@@ -264,18 +248,10 @@ import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
 
 /**
  * @swagger
- * /api/v1/vendors/{id}:
+ * /api/v1/vendors/me:
  *   delete:
  *     summary: Delete vendor profile
  *     tags: [Vendor]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           required: true
- *           description: The vendor ID
  *     responses:
  *       "204":
  *         description: Vendor profile deleted successfully
@@ -316,19 +292,19 @@ class VendorRouter {
   constructor() {
     this.vendorController = new VendorController();
     this.router = Router();
-    this.initializeRoutes();
     this.router.use(authMiddleware);
+    this.initializeRoutes();
   }
 
   initializeRoutes() {
     this.router.get(
-      "/:id",
-      roleGuardMiddleware(["vendor", "admin"]),
+      "/me",
+      roleGuardMiddleware(["vendor"]),
       this.vendorController.getVendorProfile,
     );
     this.router.put(
-      "/:id",
-      roleGuardMiddleware(["vendor", "admin"]),
+      "/me",
+      roleGuardMiddleware(["vendor"]),
       this.vendorController.updateVendorProfile,
     );
     this.router.put(
@@ -347,8 +323,8 @@ class VendorRouter {
       this.vendorController.suspendVendor,
     );
     this.router.delete(
-      "/:id",
-      roleGuardMiddleware(["vendor", "admin"]),
+      "/me",
+      roleGuardMiddleware(["vendor"]),
       this.vendorController.deleteVendorProfile,
     );
   }

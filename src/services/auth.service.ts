@@ -117,11 +117,8 @@ export class AuthService {
           throw new Error("User type not specified.");
       }
 
-      const { token: accessToken } = generateToken({
-        _id: newUser._id,
-        userType: newUser.userType,
-      });
-      const { refreshToken } = generateRefreshToken(newUser._id);
+      const { token: accessToken } = generateToken(newUser);
+      const { refreshToken } = generateRefreshToken(newUser);
 
       await User.findByIdAndUpdate(newUser._id, {
         $set: {
@@ -183,12 +180,9 @@ export class AuthService {
         );
       }
 
-      const { token: accessToken } = generateToken({
-        _id: user._id,
-        userType: user.userType,
-      });
+      const { token: accessToken } = generateToken(user);
 
-      const { refreshToken } = generateRefreshToken(user._id);
+      const { refreshToken } = generateRefreshToken(user);
 
       user = await User.findByIdAndUpdate(
         user._id,
@@ -254,11 +248,8 @@ export class AuthService {
         );
       }
 
-      const { token: newAccessToken } = generateToken({
-        _id: user._id,
-        userType: user.userType,
-      });
-      const { refreshToken: newRefreshToken } = generateRefreshToken(user._id);
+      const { token: newAccessToken } = generateToken(user);
+      const { refreshToken: newRefreshToken } = generateRefreshToken(user);
       user = await User.findByIdAndUpdate(
         user._id,
         {

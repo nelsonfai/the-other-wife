@@ -11,16 +11,16 @@ import { BadRequestException } from "../errors/bad-request-exception.error.js";
 export class VendorService {
   constructor() {}
 
-  getVendorProfile = async (vendorId: string, userId: string) => {
-    if (!vendorId) {
+  getVendorProfile = async (userId: string) => {
+    if (!userId) {
       throw new BadRequestException(
-        "Vendor ID is required",
+        "User ID is required",
         HttpStatus.BAD_REQUEST,
         ErrorCode.VALIDATION_ERROR,
       );
     }
 
-    const vendor = await Vendor.findOne({ _id: vendorId, userId })
+    const vendor = await Vendor.findOne({ userId })
       .populate("userId")
       .populate("addressId");
 
@@ -36,7 +36,6 @@ export class VendorService {
   };
 
   updateVendorProfile = async (
-    vendorId: string,
     userId: string,
     body: {
       firstName: string;
@@ -47,9 +46,9 @@ export class VendorService {
       businessLogoUrl: string;
     },
   ) => {
-    if (!vendorId) {
+    if (!userId) {
       throw new BadRequestException(
-        "Vendor ID is required",
+        "User ID is required",
         HttpStatus.BAD_REQUEST,
         ErrorCode.VALIDATION_ERROR,
       );
@@ -77,7 +76,7 @@ export class VendorService {
     if (businessLogoUrl) vendorData.businessLogoUrl = businessLogoUrl;
 
     const vendor = await Vendor.findOneAndUpdate(
-      { _id: vendorId, userId },
+      { userId },
       {
         $set: vendorData,
       },
@@ -87,7 +86,7 @@ export class VendorService {
     );
 
     const user = await User.findOneAndUpdate(
-      { _id: vendorId, userId },
+      { userId },
       {
         $set: userData,
       },
@@ -110,7 +109,7 @@ export class VendorService {
     userId: string,
     userType: string,
   ) => {
-    if (!vendorId && !userId && !userType) {
+    if (!vendorId && !userType) {
       throw new BadRequestException(
         "Vendor ID and User ID and User Type are required",
         HttpStatus.BAD_REQUEST,
@@ -128,7 +127,7 @@ export class VendorService {
     }
 
     const vendor = await Vendor.findOneAndUpdate(
-      { _id: vendorId, userId },
+      { _id: vendorId },
       {
         approvalStatus: "approved",
         approvedBy: userId,
@@ -153,16 +152,16 @@ export class VendorService {
     userId: string,
     reason: string | undefined,
   ) => {
-    if (!vendorId) {
+    if (!vendorId && !userId) {
       throw new BadRequestException(
-        "Vendor ID is required",
+        "Vendor ID and User ID are required",
         HttpStatus.BAD_REQUEST,
         ErrorCode.VALIDATION_ERROR,
       );
     }
 
     const vendor = await Vendor.findOneAndUpdate(
-      { _id: vendorId, userId },
+      { _id: vendorId },
       {
         approvalStatus: "rejected",
         rejectionReason: reason,
@@ -182,16 +181,16 @@ export class VendorService {
   };
 
   suspendVendor = async (vendorId: string, userId: string) => {
-    if (!vendorId) {
+    if (!vendorId && !userId) {
       throw new BadRequestException(
-        "Vendor ID is required",
+        "Vendor ID and User ID are required",
         HttpStatus.BAD_REQUEST,
         ErrorCode.VALIDATION_ERROR,
       );
     }
 
     const vendor = await Vendor.findOneAndUpdate(
-      { _id: vendorId, userId },
+      { _id: vendorId },
       {
         approvalStatus: "suspended",
       },
@@ -209,16 +208,16 @@ export class VendorService {
     return { vendor };
   };
 
-  deleteVendorProfile = async (vendorId: string, userId: string) => {
-    if (!vendorId) {
+  deleteVendorProfile = async (userId: string) => {
+    if (!userId) {
       throw new BadRequestException(
-        "Vendor ID is required",
+        "User ID is required",
         HttpStatus.BAD_REQUEST,
         ErrorCode.VALIDATION_ERROR,
       );
     }
 
-    const vendor = await Vendor.findOneAndDelete({ _id: vendorId, userId });
+    const vendor = await Vendor.findOne({ userId });
 
     if (!vendor) {
       throw new NotFoundException(
@@ -228,9 +227,17 @@ export class VendorService {
       );
     }
 
-    const user = await User.findOneAndDelete({ _id: userId });
+    if (vendor?.approvalStatus === "suspended") {
+      throw new BadRequestException(
+        "Suspended: profile cannot be deleted",
+        HttpStatus.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
 
-    if (!user) {
+    const deletedUser = await User.findOneAndDelete({ _id: vendor?.userId });
+
+    if (!deletedUser) {
       throw new NotFoundException(
         "User not found",
         HttpStatus.NOT_FOUND,
@@ -238,7 +245,7 @@ export class VendorService {
       );
     }
 
-    await user.deleteOne();
+    await deletedUser.deleteOne();
     await vendor.deleteOne();
   };
 }
