@@ -2,6 +2,7 @@
 
 import z from "zod";
 import type { NextFunction, Request, Response } from "express";
+import User from "../models/user.model.js";
 
 export const zodValidation =
   (schema: z.ZodType<any>) =>

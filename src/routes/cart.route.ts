@@ -5,7 +5,7 @@ import { CartController } from "../controllers/cart.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
 import { addToCartSchema } from "../zod-schema/cart.schema.js";
-import { zodValidation } from "../middlewares/zod-validation.js";
+import { zodValidation } from "../middlewares/validation.js";
 
 /**
  * @openapi

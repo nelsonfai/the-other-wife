@@ -58,10 +58,6 @@ const swaggerDefinition = {
       Meal: {
         type: "object",
         properties: {
-          _id: {
-            type: "string",
-            description: "The meal unique identifier",
-          },
           vendorId: {
             type: "string",
             description: "The vendor unique identifier",
@@ -77,6 +73,10 @@ const swaggerDefinition = {
           price: {
             type: "number",
             description: "The meal price",
+          },
+          categoryName: {
+            type: "string",
+            description: "The category name of the meal",
           },
           availableFrom: {
             type: "string",

@@ -1,6 +1,6 @@
 /** @format */
 
-import mongoose, { ClientSession } from "mongoose";
+import { ClientSession } from "mongoose";
 
 import { HttpStatus } from "../config/http.config.js";
 import { ErrorCode } from "../enums/error-code.enum.js";
@@ -22,259 +22,239 @@ import { jwtRefreshSecret, nodeEnv } from "../constants/constants.js";
 import { transaction } from "../util/transaction.util.js";
 
 export class AuthService {
-  private tx;
+  constructor() {}
 
-  constructor() {
-    this.tx = transaction();
-  }
+  signup = transaction.use(
+    async (
+      session: ClientSession,
+      body: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        password: string;
+        userType: string;
+        phoneNumber: string;
+      },
+    ): Promise<any> => {
+      const { firstName, lastName, password, userType, phoneNumber, email } =
+        body;
 
-  signup = async (body: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-    userType: string;
-    phoneNumber: string;
-  }): Promise<any> => {
-    const { firstName, lastName, password, userType, phoneNumber, email } =
-      body;
+      try {
+        const existingUser = await User.findOne({
+          $or: [
+            { ...(email && { email }) },
+            { ...(phoneNumber && { phoneNumber }) },
+          ],
+        }).session(session);
 
-    const session = await this.tx?.startTransaction();
-    try {
-      if (!phoneNumber && !email) {
-        throw new BadRequestException(
-          "Email or phone number is required",
-          HttpStatus.BAD_REQUEST,
-          ErrorCode.VALIDATION_ERROR,
-        );
-      }
-
-      const existingUser = await User.findOne({
-        $or: [
-          { ...(email && { email }) },
-          { ...(phoneNumber && { phoneNumber }) },
-        ],
-      }).session(session);
-
-      if (existingUser) {
-        const authType =
-          existingUser.email === email
+        const authType = existingUser
+          ? existingUser.email === email
             ? "email"
             : existingUser.phoneNumber === phoneNumber
               ? "phone number"
-              : "";
-        throw new BadRequestException(
-          `${authType} already exists`,
-          HttpStatus.BAD_REQUEST,
-          authType === "email"
-            ? ErrorCode.AUTH_EMAIL_ALREADY_EXISTS
-            : ErrorCode.AUTH_PHONE_NUMBER_ALREADY_EXISTS,
-        );
-      }
+              : null
+          : null;
 
-      const [newUser] = await User.create(
-        [
-          {
-            firstName,
-            lastName,
-            email,
-            passwordHash: password,
-            userType,
-            phoneNumber,
-          },
-        ],
-        { session },
-      );
-
-      switch (userType) {
-        case "customer":
-          await Customer.create(
-            [
-              {
-                userId: newUser._id,
-              },
-            ],
-            { session },
-          );
-          break;
-        case "vendor":
-          await Vendor.create(
-            [
-              {
-                userId: newUser._id,
-              },
-            ],
-            { session },
-          );
-          break;
-        case "admin":
+        if (authType) {
           throw new BadRequestException(
-            "Admin user cannot be created.",
+            `${authType} already exists`,
             HttpStatus.BAD_REQUEST,
-            ErrorCode.ACCESS_UNAUTHORIZED,
+            authType === "email"
+              ? ErrorCode.AUTH_EMAIL_ALREADY_EXISTS
+              : ErrorCode.AUTH_PHONE_NUMBER_ALREADY_EXISTS,
           );
-        default:
-          throw new Error("User type not specified.");
-      }
+        }
 
-      const { token: accessToken } = generateToken(newUser);
-      const { refreshToken } = generateRefreshToken(newUser);
-
-      await User.findByIdAndUpdate(newUser._id, {
-        $set: {
-          refreshToken,
-          refreshTokenExpiry: new Date(Date.now() + 7 * 24 * 60 * 1000),
-        },
-      }).session(session);
-
-      await this.tx.commitTransaction(session);
-
-      return {
-        accessToken,
-        refreshToken,
-        ...(newUser.omitPassword() as any),
-      };
-    } catch (error) {
-      await this.tx.end(session);
-      throw error;
-    } finally {
-      session.endSession();
-    }
-  };
-
-  login = async (body: {
-    phoneNumber?: string;
-    email?: string;
-    password: string;
-  }): Promise<any> => {
-    const { phoneNumber, email, password } = body;
-
-    const session = await this.tx.startTransaction();
-    try {
-      if (!email && !phoneNumber) {
-        throw new BadRequestException(
-          "Email or phone number is required",
-          HttpStatus.BAD_REQUEST,
-          ErrorCode.VALIDATION_ERROR,
+        const [newUser] = await User.create(
+          [
+            {
+              firstName,
+              lastName,
+              email,
+              passwordHash: password,
+              userType,
+              phoneNumber,
+            },
+          ],
+          { session },
         );
-      }
 
-      let user = await User.findOne(
-        email ? { email } : { phoneNumber },
-      ).session(session);
+        switch (userType) {
+          case "customer":
+            await Customer.create(
+              [
+                {
+                  userId: newUser._id,
+                },
+              ],
+              { session },
+            );
+            break;
+          case "vendor":
+            await Vendor.create(
+              [
+                {
+                  userId: newUser._id,
+                },
+              ],
+              { session },
+            );
+            break;
+          case "admin":
+            throw new BadRequestException(
+              "Admin user cannot be created.",
+              HttpStatus.BAD_REQUEST,
+              ErrorCode.ACCESS_UNAUTHORIZED,
+            );
+          default:
+            throw new Error("User type not specified.");
+        }
 
-      if (!user) {
-        throw new NotFoundException(
-          `Incorrect ${email ? "email" : "phone number"}`,
-          HttpStatus.NOT_FOUND,
-          ErrorCode.AUTH_USER_NOT_FOUND,
-        );
-      }
+        const { token: accessToken } = generateToken(newUser);
+        const { refreshToken } = generateRefreshToken(newUser);
 
-      const isValid = await user.comparePassword(password);
-      if (!isValid) {
-        throw new UnauthorizedExceptionError(
-          `Incorrect password`,
-          HttpStatus.UNAUTHORIZED,
-          ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
-        );
-      }
-
-      const { token: accessToken } = generateToken(user);
-
-      const { refreshToken } = generateRefreshToken(user);
-
-      user = await User.findByIdAndUpdate(
-        user._id,
-        {
+        await User.findByIdAndUpdate(newUser._id, {
           $set: {
-            lastLogin: new Date(),
             refreshToken,
-            refreshTokenExpiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            refreshTokenExpiry: new Date(Date.now() + 7 * 24 * 60 * 1000),
           },
-        },
-        { new: true },
-      ).session(session);
+        }).session(session);
 
-      const userWithoutPassword = user?.omitPassword();
-
-      await this.tx.commitTransaction(session);
-
-      return {
-        accessToken,
-        refreshToken,
-        ...userWithoutPassword,
-      };
-    } catch (error) {
-      await this.tx.end(session);
-      throw error;
-    } finally {
-      session.endSession();
-    }
-  };
-
-  refreshLogin = async (refreshToken: string) => {
-    const session = await this.tx.startTransaction();
-    try {
-      if (!refreshToken) {
-        throw new BadRequestException(
-          "Refresh token is required",
-          HttpStatus.BAD_REQUEST,
-          ErrorCode.VALIDATION_ERROR,
-        );
+        return {
+          accessToken,
+          refreshToken,
+          ...(newUser.omitPassword() as any),
+        };
+      } catch (error) {
+        throw error;
       }
+    },
+  );
 
-      const decoded = verifyToken(refreshToken, jwtRefreshSecret);
+  login = transaction.use(
+    async (
+      session: ClientSession,
+      body: {
+        phoneNumber?: string;
+        email?: string;
+        password: string;
+      },
+    ): Promise<any> => {
+      const { phoneNumber, email, password } = body;
 
-      if (!decoded || typeof decoded === "string") {
-        throw new UnauthorizedExceptionError(
-          "Invalid token",
-          HttpStatus.UNAUTHORIZED,
-          ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
-        );
-      }
+      try {
+        let user = await User.findOne(
+          email ? { email } : { phoneNumber },
+        ).session(session);
 
-      let user = await User.findOne({
-        _id: decoded._id,
-        refreshToken,
-        refreshTokenExpiry: { $gt: new Date() },
-      }).session(session);
+        if (!user) {
+          throw new NotFoundException(
+            `Incorrect ${email ? "email" : "phone number"}`,
+            HttpStatus.NOT_FOUND,
+            ErrorCode.AUTH_USER_NOT_FOUND,
+          );
+        }
 
-      if (!user) {
-        throw new NotFoundException(
-          "Session expired",
-          HttpStatus.NOT_FOUND,
-          ErrorCode.AUTH_INVALID_TOKEN,
-        );
-      }
+        const isValid = await user.comparePassword(password);
+        if (!isValid) {
+          throw new UnauthorizedExceptionError(
+            `Incorrect password`,
+            HttpStatus.UNAUTHORIZED,
+            ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+          );
+        }
 
-      const { token: newAccessToken } = generateToken(user);
-      const { refreshToken: newRefreshToken } = generateRefreshToken(user);
-      user = await User.findByIdAndUpdate(
-        user._id,
-        {
-          $set: {
-            refreshToken: newRefreshToken,
-            refreshTokenExpiry: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        const { token: accessToken } = generateToken(user);
+
+        const { refreshToken } = generateRefreshToken(user);
+
+        user = await User.findByIdAndUpdate(
+          user._id,
+          {
+            $set: {
+              lastLogin: new Date(),
+              refreshToken,
+              refreshTokenExpiry: new Date(
+                Date.now() + 7 * 24 * 60 * 60 * 1000,
+              ),
+            },
           },
-        },
-        { new: true },
-      ).session(session);
+          { new: true },
+        ).session(session);
 
-      await this.tx.commitTransaction(session);
+        const userWithoutPassword = user?.omitPassword();
 
-      return {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-        ...user?.omitPassword(),
-      };
-    } catch (error) {
-      await this.tx.end(session);
-      throw error;
-    } finally {
-      session.endSession();
-    }
-  };
+        return {
+          accessToken,
+          refreshToken,
+          ...userWithoutPassword,
+        };
+      } catch (error) {
+        throw error;
+      }
+    },
+  );
+
+  refreshLogin = transaction.use(
+    async (session: ClientSession, refreshToken: string) => {
+      try {
+        if (!refreshToken) {
+          throw new BadRequestException(
+            "Refresh token is required",
+            HttpStatus.BAD_REQUEST,
+            ErrorCode.VALIDATION_ERROR,
+          );
+        }
+
+        const decoded = verifyToken(refreshToken, jwtRefreshSecret);
+
+        if (!decoded || typeof decoded === "string") {
+          throw new UnauthorizedExceptionError(
+            "Invalid token",
+            HttpStatus.UNAUTHORIZED,
+            ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+          );
+        }
+
+        let user = await User.findOne({
+          _id: decoded._id,
+          refreshToken,
+          refreshTokenExpiry: { $gt: new Date() },
+        }).session(session);
+
+        if (!user) {
+          throw new NotFoundException(
+            "Session expired",
+            HttpStatus.NOT_FOUND,
+            ErrorCode.AUTH_INVALID_TOKEN,
+          );
+        }
+
+        const { token: newAccessToken } = generateToken(user);
+        const { refreshToken: newRefreshToken } = generateRefreshToken(user);
+        user = await User.findByIdAndUpdate(
+          user._id,
+          {
+            $set: {
+              refreshToken: newRefreshToken,
+              refreshTokenExpiry: new Date(
+                Date.now() + 7 * 24 * 60 * 60 * 1000,
+              ),
+            },
+          },
+          { new: true },
+        ).session(session);
+
+        return {
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken,
+          ...user?.omitPassword(),
+        };
+      } catch (error) {
+        throw error;
+      }
+    },
+  );
 
   logout = async (userId: string): Promise<any> => {
     if (!userId) {

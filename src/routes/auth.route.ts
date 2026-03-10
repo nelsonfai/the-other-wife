@@ -7,7 +7,7 @@ import {
   registerUserSchema,
 } from "../zod-schema/auth.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { zodValidation } from "../middlewares/zod-validation.js";
+import { zodValidation } from "../middlewares/validation.js";
 
 /**
  * @openapi
@@ -225,10 +225,7 @@ class AuthRouter {
       authMiddleware,
       this.authController.handleLogout,
     );
-    this.router.post(
-      "/refresh",
-      this.authController.handleRefreshLogin,
-    );
+    this.router.post("/refresh", this.authController.handleRefreshLogin);
   }
 }
 

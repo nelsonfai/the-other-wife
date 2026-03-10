@@ -4,7 +4,7 @@ import { AddressController } from "../controllers/address.controller.js";
 import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
 import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { zodValidation } from "../middlewares/zod-validation.js";
+import { zodValidation } from "../middlewares/validation.js";
 import {
   createAddressSchema,
   editAddressSchema,

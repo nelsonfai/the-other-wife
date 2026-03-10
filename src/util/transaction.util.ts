@@ -2,14 +2,10 @@
 
 import mongoose, { ClientSession } from "mongoose";
 
-class CreateTransaction {
-  private session: ClientSession;
+class Transaction {
+  private session = {} as ClientSession;
 
-  constructor() {
-    this.session = {} as ClientSession;
-  }
-
-  startTransaction = async () => {
+  createTransaction = async () => {
     try {
       this.session = await mongoose.startSession();
       this.session.startTransaction();
@@ -19,22 +15,23 @@ class CreateTransaction {
     }
   };
 
-  commitTransaction = async (session: ClientSession) => {
-    try {
-      await session.commitTransaction();
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  end = async (session: ClientSession) => {
-    try {
-      await session.abortTransaction();
-      session.endSession();
-    } catch (error) {
-      throw error;
-    }
-  };
+  use =
+    <Args extends any[], R>(
+      callback: (session: ClientSession, ...args: Args) => Promise<R>,
+    ) =>
+    async (...args: Args) => {
+      const session = await this.createTransaction();
+      try {
+        const result: R = await callback(session, ...args);
+        await session.commitTransaction();
+        return result;
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
+    };
 }
 
-export const transaction = () => new CreateTransaction();
+export const transaction = new Transaction();
