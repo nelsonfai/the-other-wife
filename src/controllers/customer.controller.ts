@@ -15,11 +15,11 @@ export class CustomerController {
   getCustomerProfile = handleAsyncControl(
     async (req: Request<{ id: string }>, res: Response): Promise<Response> => {
       try {
-        const customerId = req.params.id;
+        const { id: customerId } = req.params;
         const userId = req?.user?._id as unknown as string;
         const { customer } = await this.customerService.getCustomerProfile(
-          userId,
           customerId,
+          userId,
         );
         return res.status(HttpStatus.OK).json({
           status: "ok",
@@ -35,13 +35,13 @@ export class CustomerController {
   updateCustomerProfile = handleAsyncControl(
     async (req: Request<{ id: string }>, res: Response): Promise<Response> => {
       try {
-        const customerId = req.params.id;
+        const { id: customerId } = req.params;
         const userId = req?.user?._id as unknown as string;
         const { profileImageUrl } = req.body;
         const customerProfile =
           await this.customerService.updateCustomerProfile(
-            userId,
             customerId,
+            userId,
             profileImageUrl,
           );
         return res.status(HttpStatus.OK).json({
@@ -58,9 +58,9 @@ export class CustomerController {
   deleteCustomerProfile = handleAsyncControl(
     async (req: Request<{ id: string }>, res: Response): Promise<Response> => {
       try {
-        const customerId = req.params.id;
+        const { id: customerId } = req.params;
         const userId = req?.user?._id as unknown as string;
-        await this.customerService.deleteCustomerProfile(userId, customerId);
+        await this.customerService.deleteCustomerProfile(customerId, userId);
         return res.status(HttpStatus.NO_CONTENT).send();
       } catch (error) {
         throw error;

@@ -18,7 +18,7 @@ import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
  *         schema:
  *           type: string
  *           required: true
- *           description: The user ID to get the customer profile
+ *           description: The customer ID to get the customer profile
  *     responses:
  *       "200":
  *         description: Customer profile fetched
