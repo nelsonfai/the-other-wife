@@ -23,7 +23,7 @@ export const errorHandler = (
   if (err instanceof z.ZodError) {
     return res.status(HttpStatus.BAD_REQUEST).json({
       message: "Validation error",
-      error: z.treeifyError(err),
+      error: err.issues,
       status: "error",
     });
   }

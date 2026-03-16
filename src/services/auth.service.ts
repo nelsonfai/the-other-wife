@@ -133,7 +133,7 @@ export class AuthService {
           setImmediate(async () => {
             const enableRetry = async () => {
               try {
-                console.log("Signup user:", Object.freeze(userWithoutPassword));
+                console.log("Signup user:", userWithoutPassword);
 
                 const htmlTemplate = await getTemplate(
                   "src/templates",
@@ -147,7 +147,7 @@ export class AuthService {
 
                 const html = template.replaceAll(
                   "{{verificationUrl}}",
-                  `https://the-other-wife.vercel.app/api/v1/auth/verify?emailToken=${userWithoutPassword.emailToken}`,
+                  `http://localhost:8000/api/v1/auth/verify?emailToken=${userWithoutPassword.emailToken}`,
                 );
 
                 const data = {
@@ -206,26 +206,27 @@ export class AuthService {
 
           console.log("UserWithoutPassword", userWithoutPassword);
 
+          console.log("Verified user from DB:", userWithoutPassword);
+
           return {
-            userWithoutPassword: {
-              ...userWithoutPassword,
-              email: user.email,
-              firstName: user.firstName,
-            },
+            ...userWithoutPassword,
+            email: user.email,
+            firstName: user.firstName,
           };
         } catch (error) {
           throw error;
         }
       })(emailToken)
       .then((result) => {
-        const { userWithoutPassword } = result;
+        const userWithoutPassword = result;
+        console.log("Starting setImmediate for welcome email sending...");
         let numOfAttempt = 0;
         const maxNumOfAttempt = 3;
 
         setImmediate(async () => {
           const enableRetry = async () => {
             try {
-              console.log("Verified user:", Object.freeze(userWithoutPassword));
+              console.log("Verified user:", userWithoutPassword);
 
               const htmlTemplate = await getTemplate(
                 "src/templates",
@@ -454,7 +455,7 @@ export class AuthService {
                 message: template,
               } as MailData;
 
-              const info = await mailer.relayTo(data, MailAction.welcome);
+              const info = await mailer.relayTo(data, MailAction.welcomeUser);
 
               console.log(`Email sent successfully: ${info}`);
             } catch (error: any) {

@@ -22,7 +22,7 @@ export const MailAction: Record<string, MailerCallback> = {
     return transporter.sendMail({
       from: `"Peace from TheOtherWife" <${from}>`,
       to: user.email,
-      subject: mailSubject.welcome,
+      subject: mailSubject.welcomeUser,
       html: message,
     });
   },

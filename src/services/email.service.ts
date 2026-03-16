@@ -12,7 +12,8 @@ import { MailerCallback } from "../dispatcher/mail.dispatcher.js";
 import { UserDocument } from "../models/user.model.js";
 
 const MailSubject = () => ({
-  welcome: "Welcome to TheOtherWife – Your Comfort Food Journey Starts Here!",
+  welcomeUser:
+    "Welcome to TheOtherWife – Your Comfort Food Journey Starts Here!",
   verifySignup: "Verify Your Email",
 });
 
