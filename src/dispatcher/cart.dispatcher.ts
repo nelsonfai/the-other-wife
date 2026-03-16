@@ -30,12 +30,19 @@ export const CartActions: Record<string, CartAction> = {
     }
   },
   add: (cart: CartDocument, meal: MealDocument, quantity: number) => {
-    cart.meals.push({
-      mealId: meal._id,
-      price: meal.price,
-      quantity,
-      totalPrice: meal.price * quantity,
-    });
+    const existingMeal = cart.meals.find(
+      (m) => m.mealId.toString() === meal._id.toString(),
+    );
+    if (existingMeal) {
+      existingMeal.quantity += quantity;
+    } else {
+      cart.meals.push({
+        mealId: meal._id,
+        price: meal.price,
+        quantity,
+        totalPrice: meal.price * quantity,
+      });
+    }
   },
   remove: (cart: CartDocument, meal: MealDocument) => {
     cart.meals = cart.meals.filter(

@@ -8,6 +8,45 @@ import { zodValidation } from "../middlewares/validation.js";
 
 /**
  * @openapi
+ * /api/v1/carts/me:
+ *   get:
+ *     summary: Get current user cart
+ *     tags: [Cart]
+ *     responses:
+ *       "200":
+ *         description: Cart fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ApiResponse"
+ *       "401":
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/responses/401"
+ *       "403":
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/responses/403"
+ *       "404":
+ *         description: Not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/responses/404"
+ *       "500":
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/responses/500"
+ */
+
+/**
+ * @openapi
  * /api/v1/carts/{mealId}:
  *   put:
  *     summary: Add meal to cart
@@ -18,8 +57,7 @@ import { zodValidation } from "../middlewares/validation.js";
  *         required: true
  *         schema:
  *           type: string
- *           required: true
- *           description: The meal ID
+ *         description: The meal ID
  *     responses:
  *       "200":
  *         description: Meal added to cart successfully
@@ -55,8 +93,8 @@ import { zodValidation } from "../middlewares/validation.js";
 
 /**
  * @openapi
- * /api/v1/carts/{mealId}:
- *   put:
+ * /api/v1/carts/{mealId}/increment:
+ *   patch:
  *     summary: Increment meal quantity in cart
  *     tags: [Cart]
  *     parameters:
@@ -65,11 +103,10 @@ import { zodValidation } from "../middlewares/validation.js";
  *         required: true
  *         schema:
  *           type: string
- *           required: true
- *           description: The meal ID
+ *         description: The meal ID
  *     responses:
  *       "200":
- *         description: Meal added to cart successfully
+ *         description: Meal incremented successfully
  *         content:
  *           application/json:
  *             schema:
@@ -102,8 +139,8 @@ import { zodValidation } from "../middlewares/validation.js";
 
 /**
  * @openapi
- * /api/v1/carts/{mealId}:
- *   put:
+ * /api/v1/carts/{mealId}/decrement:
+ *   patch:
  *     summary: Decrement meal quantity in cart
  *     tags: [Cart]
  *     parameters:
@@ -112,11 +149,10 @@ import { zodValidation } from "../middlewares/validation.js";
  *         required: true
  *         schema:
  *           type: string
- *           required: true
- *           description: The meal ID
+ *         description: The meal ID
  *     responses:
  *       "200":
- *         description: Meal added to cart successfully
+ *         description: Meal decremented successfully
  *         content:
  *           application/json:
  *             schema:
@@ -159,62 +195,10 @@ import { zodValidation } from "../middlewares/validation.js";
  *         required: true
  *         schema:
  *           type: string
- *           required: true
- *           description: The meal ID
+ *         description: The meal ID
  *     responses:
  *       "204":
  *         description: Meal deleted from cart successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/schemas/ApiResponse"
- *       "401":
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/responses/401"
- *       "403":
- *         description: Forbidden
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/responses/403"
- *       "404":
- *         description: Not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/responses/404"
- *       "500":
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/responses/500"
- */
-
-/**
- * @openapi
- * /api/v1/carts/me:
- *   get:
- *     summary: Get current user cart
- *     tags: [Cart]
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *           required: true
- *           description: The user ID
- *     responses:
- *       "200":
- *         description: Cart fetched successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: "#/components/schemas/ApiResponse"
  *       "401":
  *         description: Unauthorized
  *         content:
@@ -255,8 +239,8 @@ export class CartRouter {
   initializeRoutes() {
     this.router.get("/me", this.cartController.getUserCart);
     this.router.put("/:mealId", this.cartController.addToCart);
-    this.router.put("/:mealId", this.cartController.incrementCart);
-    this.router.put("/:mealId", this.cartController.decrementCart);
+    this.router.patch("/:mealId", this.cartController.incrementCart);
+    this.router.patch("/:mealId", this.cartController.decrementCart);
     this.router.delete("/:mealId", this.cartController.removeFromCart);
   }
 }
