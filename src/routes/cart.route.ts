@@ -93,7 +93,7 @@ import { zodValidation } from "../middlewares/validation.js";
 
 /**
  * @openapi
- * /api/v1/carts/{mealId}/increment:
+ * /api/v1/carts/{mealId}:
  *   patch:
  *     summary: Increment meal quantity in cart
  *     tags: [Cart]
@@ -139,7 +139,7 @@ import { zodValidation } from "../middlewares/validation.js";
 
 /**
  * @openapi
- * /api/v1/carts/{mealId}/decrement:
+ * /api/v1/carts/{mealId}:
  *   patch:
  *     summary: Decrement meal quantity in cart
  *     tags: [Cart]
