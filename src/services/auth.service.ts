@@ -147,7 +147,7 @@ export class AuthService {
 
                 const html = template.replaceAll(
                   "{{verificationUrl}}",
-                  `https://the-other-wife.vercel.app/verify?emailToken=${userWithoutPassword.emailToken}`,
+                  `https://the-other-wife.vercel.app/api/v1/auth/verify?emailToken=${userWithoutPassword.emailToken}`,
                 );
 
                 const data = {
@@ -160,7 +160,7 @@ export class AuthService {
                   MailAction.verifySignup,
                 );
 
-                console.log(`Email sent successfully: ${info}`);
+                console.log(`Verify Email sent successfully: ${info}`);
               } catch (error: any) {
                 numOfAttempt++;
                 if (numOfAttempt <= maxNumOfAttempt) {
@@ -196,7 +196,7 @@ export class AuthService {
             );
           }
 
-          user.isEmailVerified = user.isEmailVerified && true;
+          user.isEmailVerified = true;
           user.emailToken = "";
           user.emailTokenExpiry = new Date(Date.now() - 1000);
           user.lastLogin = new Date();
@@ -234,7 +234,7 @@ export class AuthService {
 
               const info = await mailer.relayTo(data, MailAction.welcome);
 
-              console.log(`Email sent successfully: ${info}`);
+              console.log(`Welcome Email sent successfully: ${info}`);
             } catch (error: any) {
               numOfAttempt++;
               if (numOfAttempt <= maxNumOfAttempt) {
