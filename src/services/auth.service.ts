@@ -205,7 +205,11 @@ export class AuthService {
           const userWithoutPassword = user?.omitPassword();
 
           return {
-            userWithoutPassword,
+            userWithoutPassword: {
+              ...userWithoutPassword,
+              email: user.email,
+              firstName: user.firstName,
+            },
           };
         } catch (error) {
           throw error;
