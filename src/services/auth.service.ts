@@ -212,6 +212,7 @@ export class AuthService {
         }
       })(emailToken)
       .then((result) => {
+        const { userWithoutPassword } = result;
         let numOfAttempt = 0;
         const maxNumOfAttempt = 3;
 
@@ -225,10 +226,13 @@ export class AuthService {
                 "welcome-email.templates.html",
               );
 
-              const { template } = getFormattedData(htmlTemplate, result);
+              const { template } = getFormattedData(
+                htmlTemplate,
+                userWithoutPassword,
+              );
 
               const data = {
-                user: result,
+                user: userWithoutPassword,
                 message: template,
               };
 
