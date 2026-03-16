@@ -147,7 +147,7 @@ export class AuthService {
 
                 const html = template.replaceAll(
                   "{{verificationUrl}}",
-                  `http://localhost:8000/api/v1/auth/verify?emailToken=${userWithoutPassword.emailToken}`,
+                  `https://the-other-wife.vercel.app/api/v1/auth/verify?emailToken=${userWithoutPassword.emailToken}`,
                 );
 
                 const data = {
