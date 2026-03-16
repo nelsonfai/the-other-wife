@@ -219,7 +219,7 @@ export class AuthService {
         setImmediate(async () => {
           const enableRetry = async () => {
             try {
-              console.log(Object.freeze(result));
+              console.log(Object.freeze(userWithoutPassword));
 
               const htmlTemplate = await getTemplate(
                 "src/templates",
