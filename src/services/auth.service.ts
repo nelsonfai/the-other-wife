@@ -22,7 +22,7 @@ import { jwtRefreshSecret, nodeEnv } from "../constants/env.js";
 import { transaction } from "../util/transaction.util.js";
 import { CreateProfile } from "../dispatcher/profile.dispatcher.js";
 import { MailData, mailer } from "./email.service.js";
-import { getTemplate } from "../util/convert-template.util.js";
+import { getTemplate } from "../util/get-template.util.js";
 import { MailAction } from "../dispatcher/mail.dispatcher.js";
 import { getFormattedData } from "../util/get-maildata.js";
 
@@ -137,7 +137,7 @@ export class AuthService {
 
                 const htmlTemplate = await getTemplate(
                   "src/templates",
-                  "verify-signup.templates.html",
+                  "verify-signup.template.html",
                 );
 
                 const { template } = getFormattedData(
@@ -147,7 +147,7 @@ export class AuthService {
 
                 const html = template.replaceAll(
                   "{{verificationUrl}}",
-                  `https://the-other-wife.vercel.app/api/v1/auth/verify?token=${userWithoutPassword.emailToken}`,
+                  `http://localhost:8000/api/v1/auth/verify?token=${userWithoutPassword.emailToken}`,
                 );
 
                 const data = {
@@ -234,7 +234,7 @@ export class AuthService {
 
               const htmlTemplate = await getTemplate(
                 "src/templates",
-                "welcome-email.templates.html",
+                "welcome-email.template.html",
               );
 
               const { template } = getFormattedData(

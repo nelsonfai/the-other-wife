@@ -21,7 +21,7 @@ import { vendorRouter } from "./src/routes/vendor.route.js";
 import { cartRouter } from "./src/routes/cart.route.js";
 import { HttpStatus } from "./src/config/http.config.js";
 import { mealRouter } from "./src/routes/meal.route.js";
-import { getTemplate } from "./src/util/convert-template.util.js";
+import { getTemplate } from "./src/util/get-template.util.js";
 
 export class App {
   app: Express;
@@ -108,7 +108,7 @@ export class App {
       try {
         const template = await getTemplate(
           "src/templates",
-          "swagger.templates.html",
+          "swagger.template.html",
         );
         res.send(`${template}`);
       } catch (error: any) {
@@ -142,15 +142,6 @@ export class App {
 
 const appInstance = new App();
 const app = appInstance.app;
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection at:", promise, "reason:", reason);
-});
-
-process.on("uncaughtException", (error) => {
-  console.error("Uncaught Exception:", error);
-  process.exit(1);
-});
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   appInstance.startServer();
