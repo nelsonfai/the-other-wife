@@ -5,6 +5,7 @@ import { handleAsyncControl } from "../middlewares/handle-async-control.middlewa
 import { UserService } from "../services/user.service.js";
 import { HttpStatus } from "../config/http.config.js";
 import { ApiResponse } from "../util/response.util.js";
+import { nodeEnv } from "../constants/env.js";
 
 export class UserController {
   userService: UserService;
@@ -57,6 +58,9 @@ export class UserController {
       res.clearCookie("token", {
         httpOnly: true,
         sameSite: "strict",
+        secure: nodeEnv === "production",
+        path: "/",
+        expires: new Date(0),
       });
       res.clearCookie("refreshToken");
 
