@@ -164,12 +164,16 @@ export class AddressService {
         );
       }
 
-      await Address.updateMany(
-        { userId: userAddress.userId },
-        { $set: { isDefault: false } },
-      ).session(session);
+      const nextIsDefault = !userAddress.isDefault;
 
-      userAddress.isDefault = true;
+      if (nextIsDefault) {
+        await Address.updateMany(
+          { userId: userAddress.userId },
+          { $set: { isDefault: false } },
+        ).session(session);
+      }
+
+      userAddress.isDefault = nextIsDefault;
 
       await userAddress.save({ session });
 
