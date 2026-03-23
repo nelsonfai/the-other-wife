@@ -11,6 +11,8 @@ export interface CartDocument extends Document {
     totalPrice: number;
   }[];
   totalAmount: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const CartSchema = new Schema(

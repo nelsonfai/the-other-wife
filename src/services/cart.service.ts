@@ -11,6 +11,34 @@ import Meal from "../models/meal.model.js";
 import { transaction } from "../util/transaction.util.js";
 
 class CartBase {
+  ensureSingleVendorCart = async (
+    session: ClientSession,
+    cart: CartDocument,
+    mealVendorId: string,
+  ) => {
+    if (cart.meals.length === 0) {
+      return;
+    }
+
+    const existingMeals = await Meal.find({
+      _id: { $in: cart.meals.map((item) => item.mealId) },
+    })
+      .select("vendorId")
+      .session(session);
+
+    const hasDifferentVendor = existingMeals.some(
+      (existingMeal) => existingMeal.vendorId.toString() !== mealVendorId,
+    );
+
+    if (hasDifferentVendor) {
+      throw new BadRequestException(
+        "Cart currently supports meals from one vendor at a time",
+        HttpStatus.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
+  };
+
   calculateTotalAmount = (cart: CartDocument) => {
     cart.meals.forEach((meal) => {
       meal.totalPrice = meal.price * meal.quantity;
@@ -66,6 +94,17 @@ class CartBase {
           },
         ],
         { session },
+      );
+    }
+
+    if (
+      action === CartActions.add ||
+      action === CartActions.increment
+    ) {
+      await this.ensureSingleVendorCart(
+        session,
+        cart,
+        meal.vendorId.toString(),
       );
     }
 

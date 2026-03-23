@@ -45,10 +45,14 @@ export class MealController {
         };
 
         const pagination = {
-          pageSize: Number.isFinite(pageSizeValue) ? pageSizeValue : undefined,
-          pageNumber: Number.isFinite(pageNumberValue)
-            ? pageNumberValue
-            : undefined,
+          pageSize:
+            Number.isFinite(pageSizeValue) && pageSizeValue > 0
+              ? pageSizeValue
+              : undefined,
+          pageNumber:
+            Number.isFinite(pageNumberValue) && pageNumberValue > 0
+              ? pageNumberValue
+              : undefined,
         };
 
         const meal = await this.mealService.getMeals(query, pagination);

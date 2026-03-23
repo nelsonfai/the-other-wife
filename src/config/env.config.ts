@@ -16,6 +16,10 @@ type EnvConfig = {
   EMAIL_USER: string;
   EMAIL_PASSWORD: string;
   FROM: string;
+  PAYSTACK_SECRET_KEY: string;
+  PAYSTACK_PUBLIC_KEY: string;
+  PAYSTACK_BASE_URL: string;
+  PAYSTACK_CALLBACK_URL: string;
 };
 
 const getEnvConfig = (): EnvConfig => {
@@ -34,6 +38,10 @@ const getEnvConfig = (): EnvConfig => {
     EMAIL_USER: getEnv("EMAIL_USER"),
     EMAIL_PASSWORD: getEnv("EMAIL_PASSWORD"),
     FROM: getEnv("FROM"),
+    PAYSTACK_SECRET_KEY: getEnv("PAYSTACK_SECRET_KEY"),
+    PAYSTACK_PUBLIC_KEY: getEnv("PAYSTACK_PUBLIC_KEY"),
+    PAYSTACK_BASE_URL: getEnv("PAYSTACK_BASE_URL") || "https://api.paystack.co",
+    PAYSTACK_CALLBACK_URL: getEnv("PAYSTACK_CALLBACK_URL"),
   };
 };
 

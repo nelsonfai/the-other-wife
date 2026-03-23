@@ -210,6 +210,68 @@ const swaggerDefinition = {
         type: "string",
         enum: ["home", "work", "other"],
       },
+      CheckoutPaymentProvider: {
+        type: "string",
+        enum: ["paystack", "cash", "wallet"],
+      },
+      CheckoutConfirmRequest: {
+        type: "object",
+        required: ["addressId", "cartUpdatedAt"],
+        properties: {
+          addressId: {
+            type: "string",
+            example: "67ff2f8be1234567890abcde",
+          },
+          cartUpdatedAt: {
+            type: "string",
+            format: "date-time",
+            description:
+              "Concurrency token from /checkout/preview to ensure the cart has not changed.",
+            example: "2026-03-17T12:00:00.000Z",
+          },
+          paymentProvider: {
+            $ref: "#/components/schemas/CheckoutPaymentProvider",
+            default: "paystack",
+          },
+        },
+      },
+      CheckoutConfirmResponse: {
+        type: "object",
+        properties: {
+          order: {
+            type: "object",
+            description: "Created order record",
+          },
+          payment: {
+            type: "object",
+            description:
+              "Created payment record. For Paystack, authorizationUrl is returned here.",
+            properties: {
+              provider: {
+                $ref: "#/components/schemas/CheckoutPaymentProvider",
+              },
+              status: {
+                type: "string",
+              },
+              authorizationUrl: {
+                type: "string",
+                nullable: true,
+                description:
+                  "Paystack checkout URL. Null or omitted for cash payments.",
+                example: "https://checkout.paystack.com/abc123",
+              },
+              accessCode: {
+                type: "string",
+                nullable: true,
+              },
+            },
+          },
+          preview: {
+            type: "object",
+            description: "Checkout snapshot used to create the order",
+          },
+        },
+      },
       VendorApprovalStatus: {
         type: "string",
         enum: ["pending", "approved", "suspended", "rejected"],

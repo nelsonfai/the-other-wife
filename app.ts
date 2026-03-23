@@ -22,6 +22,9 @@ import { cartRouter } from "./src/routes/cart.route.js";
 import { HttpStatus } from "./src/config/http.config.js";
 import { mealRouter } from "./src/routes/meal.route.js";
 import { getTemplate } from "./src/util/get-template.util.js";
+import { checkoutRouter } from "./src/routes/checkout.route.js";
+import { paymentRouter } from "./src/routes/payment.route.js";
+import { orderRouter } from "./src/routes/order.route.js";
 
 export class App {
   app: Express;
@@ -54,7 +57,13 @@ export class App {
         },
       }),
     );
-    this.app.use(express.json());
+    this.app.use(
+      express.json({
+        verify: (req, _res, buf) => {
+          (req as express.Request).rawBody = buf.toString("utf8");
+        },
+      }),
+    );
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(
       cors({
@@ -92,6 +101,9 @@ export class App {
     this.app.use("/api/v1/vendors", vendorRouter);
     this.app.use("/api/v1/carts", cartRouter);
     this.app.use("/api/v1/meals", mealRouter);
+    this.app.use("/api/v1/checkout", checkoutRouter);
+    this.app.use("/api/v1/orders", orderRouter);
+    this.app.use("/api/v1/payments", paymentRouter);
 
     this.app.get("/api-docs", async (_req, res) => {
       try {

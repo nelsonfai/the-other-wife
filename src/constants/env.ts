@@ -16,6 +16,10 @@ export const email_port: number = envconfig.EMAIL_PORT;
 export const email_user: string = envconfig.EMAIL_USER;
 export const email_password: string = envconfig.EMAIL_PASSWORD;
 export const from: string = envconfig.FROM;
+export const paystackSecretKey: string = envconfig.PAYSTACK_SECRET_KEY;
+export const paystackPublicKey: string = envconfig.PAYSTACK_PUBLIC_KEY;
+export const paystackBaseUrl: string = envconfig.PAYSTACK_BASE_URL;
+export const paystackCallbackUrl: string = envconfig.PAYSTACK_CALLBACK_URL;
 
 console.log("port", !!port);
 console.log("hostName", !!hostName);
@@ -28,3 +32,7 @@ console.log("email_port", !!email_port);
 console.log("email_user", !!email_user);
 console.log("email_password", !!email_password);
 console.log("from", !!from);
+console.log("paystackSecretKey", !!paystackSecretKey);
+console.log("paystackPublicKey", !!paystackPublicKey);
+console.log("paystackBaseUrl", !!paystackBaseUrl);
+console.log("paystackCallbackUrl", !!paystackCallbackUrl);
