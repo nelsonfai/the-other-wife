@@ -11,6 +11,8 @@ export interface CartDocument extends Document {
     totalPrice: number;
   }[];
   totalAmount: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const CartSchema = new Schema(
@@ -18,6 +20,7 @@ const CartSchema = new Schema(
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      unique: true,
       required: true,
     },
     meals: [

@@ -3,15 +3,15 @@
 import mongoose, { Document, Schema, model } from "mongoose";
 
 export interface AddressDocument extends Document {
-  addressLine1: string;
-  addressLine2: string;
+  userId: mongoose.Types.ObjectId;
+  label: "home" | "work" | "other";
+  address?: string;
   city: string;
   state: string;
   country: string;
   postalCode: string;
   latitude: number;
   longitude: number;
-  deliveryInstructions: string;
   isDefault: boolean;
 }
 

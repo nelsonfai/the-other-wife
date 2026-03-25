@@ -6,24 +6,23 @@ export type HandleAsyncControl<
   P = any,
   ResBody = any,
   ReqBody = any,
-  ReqQuery = any
+  ReqQuery = any,
 > = (
   req: Request<P, ResBody, ReqBody, ReqQuery>,
   res: Response,
-  next: NextFunction
 ) => Promise<Response>;
 
 export const handleAsyncControl =
   <P = any, ResBody = any, ReqBody = any, ReqQuery = any>(
-    controller: HandleAsyncControl<P, ResBody, ReqBody, ReqQuery>
+    controller: HandleAsyncControl<P, ResBody, ReqBody, ReqQuery>,
   ) =>
   async (
     req: Request<P, ResBody, ReqBody, ReqQuery>,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
-      return await controller(req, res, next);
+      return await controller(req, res);
     } catch (error) {
       next(error);
     }

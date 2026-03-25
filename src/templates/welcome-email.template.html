@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Modern Reset */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #FDFDFD;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        table {
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        td {
+            padding: 0;
+        }
+
+        img {
+            border: 0;
+        }
+
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #FDFDFD;
+            padding-top: 40px;
+            padding-bottom: 40px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #F0F0F0;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1A1A1A;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #4A4A4A;
+            margin: 0 0 20px 0;
+        }
+
+        /* Product Brand Elements */
+        .header {
+            padding: 48px 40px 32px 40px;
+            text-align: left;
+            border-bottom: 1px solid #F8F8F8;
+        }
+
+        .brand-dot {
+            color: #44C455;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        /* The Card Feature */
+        .feature-list {
+            background-color: #FAFAFA;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+
+        .feature-item {
+            display: table;
+            margin-bottom: 16px;
+        }
+
+        .feature-icon {
+            display: table-cell;
+            width: 24px;
+            color: #44C455;
+            font-weight: bold;
+            font-size: 18px;
+            vertical-align: top;
+        }
+
+        .feature-text {
+            display: table-cell;
+            padding-left: 12px;
+            font-size: 15px;
+            color: #333333;
+            line-height: 1.5;
+        }
+
+        /* CTA Button */
+        .button-container {
+            padding: 0 40px 40px 40px;
+            text-align: left;
+        }
+
+        .btn {
+            background-color: #FF6B36;
+            color: #ffffff !important;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 10px;
+            display: inline-block;
+            font-weight: 700;
+            font-size: 15px;
+            box-shadow: 0 4px 12px rgba(255, 107, 54, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .footer {
+            padding: 40px;
+            background-color: #F9F9F9;
+            text-align: left;
+            border-top: 1px solid #F0F0F0;
+        }
+
+        .footer-text {
+            font-size: 13px;
+            color: #999999;
+            line-height: 1.5;
+        }
+
+        .social-links {
+            margin-top: 16px;
+        }
+
+        .social-links a {
+            color: #1A1A1A;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            margin-right: 16px;
+        }
+
+        .accent-bar {
+            width: 40px;
+            height: 4px;
+            background-color: #44C455;
+            border-radius: 2px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <center class="wrapper">
+        <table class="container">
+            <tr>
+                <td class="header">
+                    <div class="accent-bar"></div>
+                    <h1>TheOtherWife<span class="brand-dot">.</span></h1>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="content">
+                    <p style="font-size: 22px; color: #1A1A1A; font-weight: 700; letter-spacing: -0.4px;">Welcome to the
+                        family, {{firstName}}!</p>
+
+                    <p>We’re building a world where wholesome, home-prepared meals are just a click away. It’s about
+                        more than food; it’s about supporting local vendors and bringing love back to your table.</p>
+
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <div class="feature-icon">✓</div>
+                            <div class="feature-text"><strong>Curated Selection:</strong> Explore a diverse menu of
+                                local soups and stews.</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">✓</div>
+                            <div class="feature-text"><strong>Smart Portions:</strong> Order exactly what you need with
+                                zero waste.</div>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">✓</div>
+                            <div class="feature-text"><strong>HomeChefs:</strong> Verified local cooks preparing meals
+                                with care.</div>
+                        </div>
+                    </div>
+
+                    <p style="margin-bottom: 0;">Ready to taste the difference?</p>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="button-container">
+                    <a href="https://theotherwife.com/explore" class="btn">Explore Today’s Menu</a>
+                </td>
+            </tr>
+
+            <tr>
+                <td class="footer">
+                    <p class="footer-text"><strong>The TOW Team</strong><br>Crafting wholesome experiences daily.</p>
+                    <div class="social-links">
+                        <a href="https://www.instagram.com/theotherwife_">Instagram</a>
+                        <a href="https://www.facebook.com/theotherwife1">Facebook</a>
+                        <a href="https://www.linkedin.com/company/theotherwife/">LinkedIn</a>
+                    </div>
+                    <p class="footer-text" style="margin-top: 24px; font-size: 11px;">
+                        &copy; 2026 TheOtherWife Inc. <br>
+                        You received this because you signed up for a TheOtherWife account.
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </center>
+</body>
+
+</html>

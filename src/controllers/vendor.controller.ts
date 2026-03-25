@@ -1,9 +1,10 @@
 /** @format */
 
-import { HttpStatus } from "../config/http.config";
-import { handleAsyncControl } from "../middlewares/handleAsyncControl.middleware";
-import { VendorService } from "../services/vendor.service";
-import { Request, Response } from "express";
+import { HttpStatus } from "../config/http.config.js";
+import { handleAsyncControl } from "../middlewares/handle-async-control.middleware.js";
+import { VendorService } from "../services/vendor.service.js";
+import type { Request, Response } from "express";
+import { ApiResponse } from "../util/response.util.js";
 
 export class VendorController {
   vendorService: VendorService;
@@ -12,18 +13,63 @@ export class VendorController {
   }
 
   getVendorProfile = handleAsyncControl(
-    async (
-      req: Request<{ vendorId: string }>,
-      res: Response,
-    ): Promise<Response> => {
-      const vendorId = req.params.vendorId;
+    async (req: Request<{ id: string }>, res: Response): Promise<Response> => {
+      const userId = req?.user?._id as unknown as string;
       try {
-        const vendor = await this.vendorService.getVendorProfile(vendorId);
+        const vendor = await this.vendorService.getVendorProfile(userId);
         return res.status(HttpStatus.OK).json({
           status: "ok",
           message: "Vendor profile retrieved successfully",
-          vendor,
+          data: vendor,
+        } as ApiResponse);
+      } catch (error) {
+        throw error;
+      }
+    },
+  );
+
+  updateVendorProfile = handleAsyncControl(
+    async (
+      req: Request<
+        { id: string },
+        {},
+        {
+          firstName: string;
+          lastName: string;
+          phoneNumber: string;
+          businessName: string;
+          businessDescription: string;
+          businessLogoUrl: string;
+        }
+      >,
+      res: Response,
+    ): Promise<Response> => {
+      const vendorId = req.params.id;
+      const userId = req?.user?._id as unknown as string;
+
+      const {
+        firstName,
+        lastName,
+        phoneNumber,
+        businessName,
+        businessDescription,
+        businessLogoUrl,
+      } = req.body;
+
+      try {
+        const vendor = await this.vendorService.updateVendorProfile(userId, {
+          firstName,
+          lastName,
+          phoneNumber,
+          businessName,
+          businessDescription,
+          businessLogoUrl,
         });
+        return res.status(HttpStatus.OK).json({
+          status: "ok",
+          message: "Vendor profile updated successfully",
+          data: vendor,
+        } as ApiResponse);
       } catch (error) {
         throw error;
       }
@@ -31,20 +77,22 @@ export class VendorController {
   );
 
   approveVendor = handleAsyncControl(
-    async (
-      req: Request<{ vendorId: string }>,
-      res: Response,
-    ): Promise<Response> => {
-      const vendorId = req.params.vendorId;
-      const userId = req.user?._id?.toString();
+    async (req: Request<{ id: string }>, res: Response): Promise<Response> => {
+      const vendorId = req.params.id;
+      const userId = req.user?._id as unknown as string;
+      const userType = req.user?.userType as unknown as string;
 
       try {
-        const vendor = await this.vendorService.approveVendor(vendorId, userId);
+        const vendor = await this.vendorService.approveVendor(
+          vendorId,
+          userId,
+          userType,
+        );
         return res.status(HttpStatus.OK).json({
           status: "ok",
           message: "Vendor approved successfully",
-          vendor,
-        });
+          data: vendor,
+        } as ApiResponse);
       } catch (error) {
         throw error;
       }
@@ -54,7 +102,7 @@ export class VendorController {
   rejectVendor = handleAsyncControl(
     async (
       req: Request<
-        { vendorId: string },
+        { id: string },
         {},
         {
           rejectionReason: string;
@@ -62,19 +110,21 @@ export class VendorController {
       >,
       res: Response,
     ): Promise<Response> => {
-      const vendorId = req.params.vendorId;
+      const vendorId = req.params.id;
+      const userId = req?.user?._id as unknown as string;
       const rejectionReason = req.body.rejectionReason;
 
       try {
         const vendor = await this.vendorService.rejectVendor(
           vendorId,
+          userId,
           rejectionReason,
         );
         return res.status(HttpStatus.OK).json({
           status: "ok",
           message: "Vendor rejected successfully",
-          vendor,
-        });
+          data: vendor,
+        } as ApiResponse);
       } catch (error) {
         throw error;
       }
@@ -82,19 +132,17 @@ export class VendorController {
   );
 
   suspendVendor = handleAsyncControl(
-    async (
-      req: Request<{ vendorId: string }>,
-      res: Response,
-    ): Promise<Response> => {
-      const vendorId = req.params.vendorId;
+    async (req: Request<{ id: string }>, res: Response): Promise<Response> => {
+      const vendorId = req.params.id;
+      const userId = req?.user?._id as unknown as string;
 
       try {
-        const vendor = await this.vendorService.suspendVendor(vendorId);
+        const vendor = await this.vendorService.suspendVendor(vendorId, userId);
         return res.status(HttpStatus.OK).json({
           status: "ok",
           message: "Vendor suspended successfully",
-          vendor,
-        });
+          data: vendor,
+        } as ApiResponse);
       } catch (error) {
         throw error;
       }
@@ -102,19 +150,12 @@ export class VendorController {
   );
 
   deleteVendorProfile = handleAsyncControl(
-    async (
-      req: Request<{ vendorId: string }>,
-      res: Response,
-    ): Promise<Response> => {
-      const vendorId = req.params.vendorId;
+    async (req: Request, res: Response): Promise<Response> => {
+      const userId = req?.user?._id as unknown as string;
 
       try {
-        const vendor = await this.vendorService.deleteVendorProfile(vendorId);
-        return res.status(HttpStatus.OK).json({
-          status: "ok",
-          message: "Vendor profile deleted successfully",
-          vendor,
-        });
+        await this.vendorService.deleteVendorProfile(userId);
+        return res.status(HttpStatus.NO_CONTENT).send();
       } catch (error) {
         throw error;
       }

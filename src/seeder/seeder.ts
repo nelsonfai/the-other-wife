@@ -2,11 +2,8 @@
 
 import mongoose from "mongoose";
 
-import { Db } from "../config/db.config.ts";
-import MealCategory, {
-  CategoryValueType,
-  CategoryType,
-} from "../models/mealCategory.model.ts";
+import { Db } from "../config/db.config.js";
+import MealCategory, { CategoryType } from "../models/mealCategory.model.js";
 
 import type { ClientSession } from "mongoose";
 
@@ -38,9 +35,10 @@ export class Seeder {
 
   run = async (): Promise<void> => {
     let session: ClientSession | undefined;
+    session = await this.startSession();
+
     try {
-      this.db?.connect();
-      session = await this.startSession();
+      await this.db?.connect();
       session.startTransaction();
 
       await this.clearExistingCategories(session);
@@ -84,13 +82,9 @@ export class Seeder {
   };
 }
 
-new Seeder()
-  .run()
-  .then(() => {
-    console.log("Seeding complete");
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.error("Seeding failed", err);
-    process.exit(1);
-  });
+if (import.meta.url === `file://${process.argv[1]}`) {
+  new Seeder()
+    .run()
+    .then(() => console.log("Seeding complete"))
+    .catch((err) => console.log("Seeding failed", err));
+}

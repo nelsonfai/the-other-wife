@@ -1,13 +1,15 @@
 /** @format */
 
-import { Request, Response, NextFunction, json } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { UnauthorizedExceptionError } from "../errors/unauthorized-exception.error.js";
 import { HttpStatus } from "../config/http.config.js";
 import { ErrorCode } from "../enums/error-code.enum.js";
 
-import jwt from "jsonwebtoken";
+import { jwtSecret } from "../constants/env.js";
+
+import { verifyToken } from "../util/generate-token.util.js";
+import { UserDocument } from "../models/user.model.js";
 import User from "../models/user.model.js";
-import { jwtSecret } from "../constants/constants.js";
 
 export const authMiddleware = async (
   req: Request,
@@ -25,24 +27,38 @@ export const authMiddleware = async (
   }
 
   try {
-    const decoded = jwt.verify(accessToken, jwtSecret);
+    const decoded = verifyToken(accessToken, jwtSecret);
 
     if (!decoded || typeof decoded === "string") {
       throw new UnauthorizedExceptionError(
-        "Unauthorized. Please log in.",
+        `Unauthorized
+        Reason: ${decoded}`,
         HttpStatus.UNAUTHORIZED,
         ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
       );
     }
 
-    req.user = await User.findById(decoded.id).select("-passwordHash");
+    const user = await User.findById((decoded as UserDocument)._id).select(
+      "-passwordHash",
+    );
 
-    if (!req.user)
+    if (!user)
       throw new UnauthorizedExceptionError(
-        "Unauthorized. Please log in.",
+        `Unauthorized
+        Reason: User not found`,
         HttpStatus.UNAUTHORIZED,
         ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
       );
+
+    if (user.status !== "active") {
+      throw new UnauthorizedExceptionError(
+        `Forbidden. User status is ${user.status}`,
+        HttpStatus.FORBIDDEN,
+        ErrorCode.ACCESS_UNAUTHORIZED,
+      );
+    }
+
+    req.user = user as unknown as UserDocument;
     next();
   } catch (error) {
     throw error;

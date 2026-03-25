@@ -1,6 +1,6 @@
 /** @format */
 
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { UnauthorizedExceptionError } from "../errors/unauthorized-exception.error.js";
 import { HttpStatus } from "../config/http.config.js";
 import { ErrorCode } from "../enums/error-code.enum.js";
@@ -8,11 +8,12 @@ import { ErrorCode } from "../enums/error-code.enum.js";
 export const roleGuardMiddleware = (roles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!roles.includes(req.user?.userType as string)) {
+      if (!roles.includes(req?.user?.userType as string)) {
+        console.log("User Type: ", req?.user?.userType);
         throw new UnauthorizedExceptionError(
-          "Unauthorized. You do not have permission to access this resource.",
-          HttpStatus.UNAUTHORIZED,
-          ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+          `Forbidden. ${req?.user?.userType} is not allowed to access this resource`,
+          HttpStatus.FORBIDDEN,
+          ErrorCode.ACCESS_UNAUTHORIZED,
         );
       }
       next();

@@ -9,9 +9,12 @@ export interface UserDocument extends Document {
   email: string;
   passwordHash: string;
   phoneNumber: string;
-  pushToken: string;
-  resetToken: string | null;
-  resetTokenExpiry: number | null;
+  emailToken: string;
+  emailTokenExpiry: Date;
+  otp: string;
+  otpExpiry: Date;
+  refreshToken: string;
+  refreshTokenExpiry: Date;
   status: string;
   userType: string;
   authType: string;
@@ -29,39 +32,44 @@ const UserSchema = new Schema(
     firstName: {
       type: String,
       required: true,
+      trim: true,
     },
     lastName: {
       type: String,
       required: true,
+      trim: true,
     },
     email: {
       type: String,
       required: true,
       trim: true,
       lowercase: true,
-      unique: true,
     },
     passwordHash: {
       type: String,
       required: true,
-      unique: true,
     },
     phoneNumber: {
       type: String,
       required: true,
       unique: true,
     },
-    pushToken: {
+    emailToken: {
       type: String,
       required: false,
     },
-    resetToken: {
-      type: String,
-      required: false,
-    },
-    resetTokenExpiry: {
+    emailTokenExpiry: {
       type: Date,
       required: false,
+    },
+    refreshToken: {
+      type: String,
+      required: false,
+    },
+    refreshTokenExpiry: {
+      type: Date,
+      required: false,
+      default: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
     },
     status: {
       type: String,
@@ -70,14 +78,13 @@ const UserSchema = new Schema(
     },
     userType: {
       type: String,
-      required: false,
+      required: true,
       enum: ["customer", "vendor", "admin"],
-      default: "customer",
     },
     authType: {
       type: String,
-      enum: ["email", "google", "phone"],
-      default: "phone",
+      enum: ["email", "google", "phoneNumber"],
+      default: "phoneNumber",
     },
     isEmailVerified: {
       type: Boolean,
@@ -104,10 +111,10 @@ UserSchema.pre("save", async function (next) {
     try {
       const salt = await bcrypt.genSalt(10);
       this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
-      next();
+      return next();
     } catch (error) {
       console.error("Error hashing password:", error);
-      next(error as Error);
+      return next(error as Error);
     }
   }
   next();

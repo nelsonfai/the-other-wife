@@ -1,9 +1,10 @@
 /** @format */
 
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { HttpStatus } from "../config/http.config.js";
-import { handleAsyncControl } from "../middlewares/handleAsyncControl.middleware";
+import { handleAsyncControl } from "../middlewares/handle-async-control.middleware.js";
 import { CartService } from "../services/cart.service.js";
+import { ApiResponse } from "../util/response.util.js";
 
 export class CartController {
   cartService: CartService;
@@ -14,46 +15,78 @@ export class CartController {
 
   addToCart = handleAsyncControl(
     async (
-      req: Request<
-        { mealId: string },
-        {},
-        {
-          quantity: number;
-          action: "increment" | "decrement";
-        }
-      >,
+      req: Request<{ mealId: string }, {}, {}>,
       res: Response,
     ): Promise<Response> => {
-      const userId = req.user?._id?.toString();
+      const userId = req.user?._id as unknown as string;
       const mealId = req.params.mealId;
 
       try {
-        const { quantity, action } = req.body;
-        await this.cartService.addToCart(userId, mealId, quantity, action);
+        const cart = await this.cartService.addToCart(userId, mealId);
         return res.status(HttpStatus.OK).json({
-          success: true,
+          status: "ok",
           message: "Meal added to cart successfully",
-        });
+          data: cart,
+        } as ApiResponse);
       } catch (error) {
         throw error;
       }
     },
   );
 
-  deleteFromCart = handleAsyncControl(
+  removeFromCart = handleAsyncControl(
     async (
       req: Request<{ mealId: string }, {}, {}>,
       res: Response,
     ): Promise<Response> => {
-      const userId = req.user?._id?.toString();
+      const userId = req.user?._id as unknown as string;
       const mealId = req.params.mealId;
 
       try {
-        await this.cartService.deleteFromCart(userId, mealId);
+        await this.cartService.removeFromCart(userId, mealId);
+        return res.status(HttpStatus.NO_CONTENT).send();
+      } catch (error) {
+        throw error;
+      }
+    },
+  );
+
+  incrementCart = handleAsyncControl(
+    async (
+      req: Request<{ mealId: string }, {}, {}>,
+      res: Response,
+    ): Promise<Response> => {
+      const userId = req.user?._id as unknown as string;
+      const mealId = req.params.mealId;
+
+      try {
+        const cart = await this.cartService.incrementCart(userId, mealId);
         return res.status(HttpStatus.OK).json({
-          success: true,
-          message: "Meal deleted from cart successfully",
-        });
+          status: "ok",
+          message: "Meal incremented in cart successfully",
+          data: cart,
+        } as ApiResponse);
+      } catch (error) {
+        throw error;
+      }
+    },
+  );
+
+  decrementCart = handleAsyncControl(
+    async (
+      req: Request<{ mealId: string }, {}, {}>,
+      res: Response,
+    ): Promise<Response> => {
+      const userId = req.user?._id as unknown as string;
+      const mealId = req.params.mealId;
+
+      try {
+        const cart = await this.cartService.decrementCart(userId, mealId);
+        return res.status(HttpStatus.OK).json({
+          status: "ok",
+          message: "Meal decremented in cart successfully",
+          data: cart,
+        } as ApiResponse);
       } catch (error) {
         throw error;
       }
@@ -61,19 +94,16 @@ export class CartController {
   );
 
   getUserCart = handleAsyncControl(
-    async (
-      req: Request<{ mealId: string }, {}, {}>,
-      res: Response,
-    ): Promise<Response> => {
-      const userId = req.user?._id?.toString();
+    async (req: Request<{}, {}, {}>, res: Response): Promise<Response> => {
+      const userId = req.user?._id as unknown as string;
 
       try {
         const cart = await this.cartService.getUserCart(userId);
         return res.status(HttpStatus.OK).json({
-          success: true,
+          status: "ok",
           message: "Cart fetched successfully",
           data: cart,
-        });
+        } as ApiResponse);
       } catch (error) {
         throw error;
       }

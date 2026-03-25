@@ -2,21 +2,20 @@
 
 import { AuthService } from "../services/auth.service.js";
 
-import { handleAsyncControl } from "../middlewares/handleAsyncControl.middleware.js";
+import { handleAsyncControl } from "../middlewares/handle-async-control.middleware.js";
 
-import { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { HttpStatus } from "../config/http.config.js";
 
-import { Db } from "../config/db.config.js";
+import { nodeEnv } from "../constants/env.js";
+import { ApiResponse } from "../util/response.util.js";
+import { CreateProfile } from "../dispatcher/profile.dispatcher.js";
 
 export class AuthController {
   authService: AuthService;
-  db: Db;
 
   constructor() {
     this.authService = new AuthService();
-    this.db = new Db();
-    this.db.connect();
   }
 
   handleSignup = handleAsyncControl(
@@ -28,37 +27,62 @@ export class AuthController {
           firstName: string;
           lastName: string;
           email: string;
-          passwordHash: string;
+          password: string;
           userType: string;
           phoneNumber: string;
         }
       >,
       res: Response,
     ): Promise<Response> => {
-      const {
-        firstName,
-        lastName,
-        email,
-        passwordHash,
-        userType,
-        phoneNumber,
-      } = req.body;
+      const { firstName, lastName, email, password, userType, phoneNumber } =
+        req.body;
 
       try {
-        const { userId } = await this.authService.signup({
-          firstName,
-          lastName,
-          email,
-          passwordHash,
-          userType,
-          phoneNumber,
-        });
+        const handleSignup = this.authService.signup([
+          userType as keyof typeof CreateProfile,
+        ]);
+
+        const { accessToken, refreshToken, ...userWithoutPassword } =
+          await handleSignup({
+            firstName,
+            lastName,
+            email,
+            password,
+            userType,
+            phoneNumber,
+          });
+
         return res.status(HttpStatus.OK).json({
           status: "ok",
           message: "User registered successfully",
-          userId,
-        });
+          data: { accessToken, refreshToken, userWithoutPassword },
+        } as ApiResponse);
       } catch (error) {
+        throw error;
+      }
+    },
+  );
+
+  verifySignup = handleAsyncControl(
+    async (
+      req: Request<{}, {}, {}, { token: string }>,
+      res: Response,
+    ): Promise<any> => {
+      const emailToken = req.query.token as string;
+      console.log(`Received verification request for token: ${emailToken}`);
+      try {
+        const userWithoutPassword =
+          await this.authService.verifySignup(emailToken);
+
+        return res.status(HttpStatus.OK).json({
+          status: "ok",
+          message: "Email verified successfully",
+          data: {
+            userWithoutPassword,
+          },
+        } as ApiResponse);
+      } catch (error) {
+        console.error("Error in verifySignup controller:", error);
         throw error;
       }
     },
@@ -66,23 +90,78 @@ export class AuthController {
 
   handleLogin = handleAsyncControl(
     async (
-      req: Request<{}, {}, { phoneNumber: string; passwordHash: string }>,
+      req: Request<
+        {},
+        {},
+        { phoneNumber?: string; email?: string; password: string }
+      >,
       res: Response,
-      next: NextFunction,
     ): Promise<any> => {
-      const { phoneNumber, passwordHash } = req.body;
+      const { phoneNumber, email, password } = req.body;
 
       try {
-        const { token } = await this.authService.login({
-          phoneNumber,
-          passwordHash,
-        });
+        const { accessToken, refreshToken, ...userWithoutPassword } =
+          await this.authService.login({
+            phoneNumber,
+            email,
+            password,
+          });
 
         return res
-          .cookie("token", token, { httpOnly: true, sameSite: "strict" })
+          .cookie("token", accessToken, {
+            httpOnly: true,
+            sameSite: "strict",
+            secure: nodeEnv === "production",
+          })
           .status(HttpStatus.OK)
-          .json({ status: "ok", message: "User login successful" });
+          .json({
+            status: "ok",
+            message: "User login successful",
+            data: {
+              accessToken,
+              refreshToken,
+              userWithoutPassword,
+            },
+          } as ApiResponse);
       } catch (error) {
+        throw error;
+      }
+    },
+  );
+
+  handleRefreshLogin = handleAsyncControl(
+    async (
+      req: Request<{}, {}, { refreshToken: string }>,
+      res: Response,
+    ): Promise<any> => {
+      const oldRefreshToken = req.body.refreshToken;
+
+      try {
+        const {
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken,
+          ...userWithoutPassword
+        } = await this.authService.refreshLogin(oldRefreshToken);
+
+        return res
+          .cookie("token", newAccessToken, {
+            httpOnly: true,
+            sameSite: "strict",
+            secure: nodeEnv === "production",
+          })
+          .status(HttpStatus.OK)
+          .json({
+            status: "ok",
+            message: "Login refreshed successfully",
+            data: {
+              accessToken: newAccessToken,
+              refreshToken: newRefreshToken,
+              userWithoutPassword,
+            },
+          } as ApiResponse);
+      } catch (error) {
+        res.clearCookie("token");
+        res.clearCookie("refreshToken");
         throw error;
       }
     },
@@ -90,52 +169,52 @@ export class AuthController {
 
   handleLogout = handleAsyncControl(
     async (req: Request, res: Response): Promise<any> => {
+      const userId = req?.user?._id as unknown as string;
       try {
-        const { cookieOptions } = this.authService.logout();
+        const cookieOptions = await this.authService.logout(userId);
         res.clearCookie("token", cookieOptions);
-        return res
-          .status(HttpStatus.OK)
-          .json({ status: "ok", message: "User logged out successfully" });
+        res.clearCookie("refreshToken");
+        return res.status(HttpStatus.NO_CONTENT).send();
       } catch (error) {
         throw error;
       }
     },
   );
-
-  // passwordResetRequest = handleAsyncControl(
-  //   async (
-  //     req: Request<{}, {}, { phoneNumber: string }>,
-  //     res: Response,
-  //   ): Promise<any> => {
-  //     try {
-  //       const { token } = await this.authService.passwordResetRequest(
-  //         req.body.phoneNumber,
-  //       );
-  //       return res
-  //         .status(HttpStatus.OK)
-  //         .json({ status: "ok", message: "User login successful" });
-  //     } catch (error) {
-  //       throw error;
-  //     }
-  //   },
-  // );
-
-  // passwordReset = handleAsyncControl(
-  //   async (
-  //     req: Request<{}, {}, { phoneNumber: string; token: string }>,
-  //     res: Response,
-  //   ): Promise<any> => {
-  //     try {
-  //       await this.authService.passwordReset(
-  //         req.body.phoneNumber,
-  //         req.body.token,
-  //       );
-  //       return res
-  //         .status(HttpStatus.OK)
-  //         .json({ status: "ok", message: "User login successful" });
-  //     } catch (error) {
-  //       throw error;
-  //     }
-  //   },
-  // );
 }
+
+// passwordResetRequest = handleAsyncControl(
+//   async (
+//     req: Request<{}, {}, { phoneNumber: string }>,
+//     res: Response,
+//   ): Promise<any> => {
+//     try {
+//       const { token } = await this.authService.passwordResetRequest(
+//         req.body.phoneNumber,
+//       );
+//       return res
+//         .status(HttpStatus.OK)
+//         .json({ status: "ok", message: "User login successful" });
+//     } catch (error) {
+//       throw error;
+//     }
+//   },
+// );
+
+// passwordReset = handleAsyncControl(
+//   async (
+//     req: Request<{}, {}, { phoneNumber: string; token: string }>,
+//     res: Response,
+//   ): Promise<any> => {
+//     try {
+//       await this.authService.passwordReset(
+//         req.body.phoneNumber,
+//         req.body.token,
+//       );
+//       return res
+//         .status(HttpStatus.OK)
+//         .json({ status: "ok", message: "User login successful" });
+//     } catch (error) {
+//       throw error;
+//     }
+//   },
+// );

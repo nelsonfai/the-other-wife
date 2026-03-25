@@ -1,21 +1,71 @@
 /** @format */
 
-import mongoose from "mongoose";
+import mongoose, { ClientSession } from "mongoose";
 import { HttpStatus } from "../config/http.config.js";
 import { ErrorCode } from "../enums/error-code.enum.js";
+import { BadRequestException } from "../errors/bad-request-exception.error.js";
 import { NotFoundException } from "../errors/not-found-exception.error.js";
-import Cart from "../models/cart.model.js";
+import Cart, { CartDocument } from "../models/cart.model.js";
+import { CartAction, CartActions } from "../dispatcher/cart.dispatcher.js";
 import Meal from "../models/meal.model.js";
+import { transaction } from "../util/transaction.util.js";
 
-export class CartService {
-  addToCart = async (
-    customerId: string | undefined,
-    mealId: string,
-    quantity: number,
-    action: "increment" | "decrement" | undefined,
+class CartBase {
+  ensureSingleVendorCart = async (
+    session: ClientSession,
+    cart: CartDocument,
+    mealVendorId: string,
   ) => {
-    const meal = await Meal.findById(mealId);
-    const existingCart = await Cart.findOne({ customerId });
+    if (cart.meals.length === 0) {
+      return;
+    }
+
+    const existingMeals = await Meal.find({
+      _id: { $in: cart.meals.map((item) => item.mealId) },
+    })
+      .select("vendorId")
+      .session(session);
+
+    const hasDifferentVendor = existingMeals.some(
+      (existingMeal) => existingMeal.vendorId.toString() !== mealVendorId,
+    );
+
+    if (hasDifferentVendor) {
+      throw new BadRequestException(
+        "Cart currently supports meals from one vendor at a time",
+        HttpStatus.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
+  };
+
+  calculateTotalAmount = (cart: CartDocument) => {
+    cart.meals.forEach((meal) => {
+      meal.totalPrice = meal.price * meal.quantity;
+    });
+
+    cart.totalAmount = cart.meals.reduce(
+      (total, meal) => total + meal.totalPrice,
+      0,
+    );
+  };
+
+  modifyCart = async (
+    session: ClientSession,
+    customerId: string,
+    mealId: string,
+    quantity: number = 1,
+    action: CartAction,
+  ) => {
+    if (!customerId) {
+      throw new BadRequestException(
+        "User not found",
+        HttpStatus.BAD_REQUEST,
+        ErrorCode.AUTH_UNAUTHORIZED_ACCESS,
+      );
+    }
+
+    const meal = await Meal.findById(mealId).session(session);
 
     if (!meal) {
       throw new NotFoundException(
@@ -25,81 +75,118 @@ export class CartService {
       );
     }
 
-    if (existingCart) {
-      const mealIndex = existingCart?.meals.findIndex(
-        (meal) => meal.mealId.toString() === mealId,
-      );
+    let cart = await Cart.findOne({ customerId }).session(session);
 
-      if (mealIndex !== -1 && mealIndex !== undefined) {
-        if (action === "increment") {
-          const existingMeal = existingCart?.meals[mealIndex];
-          existingMeal.quantity += quantity;
-          existingMeal.totalPrice += existingMeal.price * existingMeal.quantity;
-        } else {
-          const existingMeal = existingCart?.meals[mealIndex];
-          existingMeal.quantity -= quantity;
-          existingMeal.totalPrice -= existingMeal.price * existingMeal.quantity;
-        }
-      } else {
-        const newMeal = {
-          mealId: mealId as unknown as mongoose.Types.ObjectId,
-          price: meal.price,
-          quantity,
-          totalPrice: meal.price * quantity,
-        };
-        existingCart.meals.push(newMeal);
-      }
-
-      existingCart.totalAmount += existingCart.meals.reduce(
-        (total, meal, index) =>
-          total + existingCart.meals[index].quantity * meal.price,
-        0,
-      );
-
-      await existingCart.save();
-    } else {
-      await Cart.create({
-        customerId,
-        meals: [
+    if (!cart) {
+      [cart] = await Cart.create(
+        [
           {
-            mealId: mealId as unknown as mongoose.Types.ObjectId,
-            price: meal.price,
-            quantity,
-            totalPrice: meal.price * quantity,
+            customerId,
+            meals: [
+              {
+                mealId: mealId as unknown as mongoose.Types.ObjectId,
+                price: meal.price,
+                quantity,
+                totalPrice: meal.price * quantity,
+              },
+            ],
+            totalAmount: meal.price * quantity,
           },
         ],
-        totalAmount: meal.price * quantity,
-      });
+        { session },
+      );
     }
+
+    if (
+      action === CartActions.add ||
+      action === CartActions.increment
+    ) {
+      await this.ensureSingleVendorCart(
+        session,
+        cart,
+        meal.vendorId.toString(),
+      );
+    }
+
+    action(cart, meal, quantity);
+    this.calculateTotalAmount(cart);
+    await cart.save();
+    return cart;
   };
+}
 
-  deleteFromCart = async (customerId: string | undefined, mealId: string) => {
-    const meal = await Meal.findById(mealId);
-    const existingCart = await Cart.findOne({ customerId });
+export class CartService extends CartBase {
+  addToCart = transaction.use(
+    async (
+      session: ClientSession,
+      customerId: string,
+      mealId: string,
+      quantity: number = 1,
+    ) =>
+      await this.modifyCart(
+        session,
+        customerId,
+        mealId,
+        quantity,
+        CartActions.add,
+      ),
+  );
 
-    if (!meal) {
+  removeFromCart = transaction.use(
+    async (
+      session: ClientSession,
+      customerId: string,
+      mealId: string,
+      quantity: number = 0,
+    ) =>
+      await this.modifyCart(
+        session,
+        customerId,
+        mealId,
+        quantity,
+        CartActions.remove,
+      ),
+  );
+
+  incrementCart = transaction.use(
+    async (
+      session: ClientSession,
+      customerId: string,
+      mealId: string,
+      quantity: number = 1,
+    ) =>
+      await this.modifyCart(
+        session,
+        customerId,
+        mealId,
+        quantity,
+        CartActions.increment,
+      ),
+  );
+
+  decrementCart = transaction.use(
+    async (
+      session: ClientSession,
+      customerId: string,
+      mealId: string,
+      quantity: number = 1,
+    ) =>
+      await this.modifyCart(
+        session,
+        customerId,
+        mealId,
+        quantity,
+        CartActions.decrement,
+      ),
+  );
+
+  getUserCart = async (customerId: string) =>
+    (await Cart.findOne({ customerId })) ??
+    (() => {
       throw new NotFoundException(
-        "Meal not found",
+        "Cart not found",
         HttpStatus.NOT_FOUND,
         ErrorCode.RESOURCE_NOT_FOUND,
       );
-    }
-
-    if (existingCart) {
-      const mealIndex = existingCart?.meals.findIndex(
-        (meal) => meal.mealId.toString() === mealId,
-      );
-
-      const removedMeal = existingCart?.meals[mealIndex];
-      existingCart.totalAmount -= removedMeal.quantity * removedMeal.price;
-      existingCart.meals.splice(mealIndex, 1);
-
-      await existingCart.save();
-    }
-  };
-
-  getUserCart = async (customerId: string | undefined) => {
-    const existingCart = await Cart.findOne({ customerId });
-    return existingCart;
-  };
+    })();
 }
