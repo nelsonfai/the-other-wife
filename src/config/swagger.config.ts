@@ -1,6 +1,7 @@
 /** @format */
 
 import swaggerJSDoc from "swagger-jsdoc";
+import { hostName } from "../constants/env.js";
 
 const swaggerDefinition = {
   openapi: "3.0.0",
@@ -11,8 +12,8 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: "https://the-other-wife.vercel.app/",
-      description: "Vercel Production",
+      url: hostName,
+      description: "Configured Host",
     },
   ],
   components: {
