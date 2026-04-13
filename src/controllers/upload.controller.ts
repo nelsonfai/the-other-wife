@@ -44,38 +44,4 @@ export class UploadController {
       } as ApiResponse);
     },
   );
-
-  uploadImageFile = handleAsyncControl(
-    async (
-      req: Request<
-        {},
-        {},
-        {
-          assetType:
-            | "vendorDocument"
-            | "vendorBusinessLogo"
-            | "mealImage"
-            | "customerProfileImage";
-        }
-      >,
-      res: Response,
-    ) => {
-      const userId = req.user?._id as unknown as string;
-      const userType = req.user?.userType as string;
-      const file = req.file;
-
-      const data = await this.uploadService.uploadImageFile(
-        userId,
-        userType,
-        req.body.assetType,
-        file,
-      );
-
-      return res.status(HttpStatus.OK).json({
-        status: "ok",
-        message: "File uploaded successfully",
-        data,
-      } as ApiResponse);
-    },
-  );
 }

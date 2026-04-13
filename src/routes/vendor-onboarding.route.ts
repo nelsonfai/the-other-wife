@@ -59,9 +59,29 @@ import { uploadVendorOnboardingAssetsToCloudinary } from "../middlewares/cloudin
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: "#/components/schemas/VendorOnboardingStep2Request"
+ *             type: object
+ *             required:
+ *               - businessName
+ *               - yearsOfExperience
+ *               - cuisines
+ *               - bankName
+ *               - accountNumber
+ *             properties:
+ *               businessName: { type: string }
+ *               businessDescription: { type: string }
+ *               businessLogoUrl: { type: string }
+ *               businessLogo:
+ *                 type: string
+ *                 format: binary
+ *               yearsOfExperience: { type: number }
+ *               cuisines:
+ *                 type: array
+ *                 items: { type: string }
+ *               bankName: { type: string }
+ *               accountNumber: { type: string }
+ *               accountName: { type: string }
  *     responses:
  *       "200":
  *         description: Vendor onboarding step 2 completed
@@ -75,9 +95,32 @@ import { uploadVendorOnboardingAssetsToCloudinary } from "../middlewares/cloudin
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: "#/components/schemas/VendorOnboardingStep3Request"
+ *             type: object
+ *             required:
+ *               - confirmedAccuracy
+ *               - acceptedTerms
+ *               - acceptedVerification
+ *             properties:
+ *               governmentId:
+ *                 $ref: "#/components/schemas/VendorOnboardingDocumentRequest"
+ *               businessCertificate:
+ *                 $ref: "#/components/schemas/VendorOnboardingDocumentRequest"
+ *               displayImage:
+ *                 $ref: "#/components/schemas/VendorOnboardingDocumentRequest"
+ *               governmentIdFile:
+ *                 type: string
+ *                 format: binary
+ *               businessCertificateFile:
+ *                 type: string
+ *                 format: binary
+ *               displayImageFile:
+ *                 type: string
+ *                 format: binary
+ *               confirmedAccuracy: { type: boolean }
+ *               acceptedTerms: { type: boolean }
+ *               acceptedVerification: { type: boolean }
  *     responses:
  *       "200":
  *         description: Vendor onboarding step 3 completed

@@ -98,7 +98,3 @@ export const uploadVendorOnboardingFiles = withMulterErrorHandling(
     { name: "displayImageFile", maxCount: 1 },
   ]),
 );
-
-export const uploadSingleImageFile = withMulterErrorHandling(
-  upload.single("file"),
-);

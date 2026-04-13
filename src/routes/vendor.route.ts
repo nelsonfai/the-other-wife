@@ -100,7 +100,7 @@ import { uploadBusinessLogoToCloudinary } from "../middlewares/cloudinary-upload
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -110,6 +110,9 @@ import { uploadBusinessLogoToCloudinary } from "../middlewares/cloudinary-upload
  *               businessName: { type: string }
  *               businessDescription: { type: string }
  *               businessLogoUrl: { type: string }
+ *               businessLogo:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       "200":
  *         description: Vendor profile updated successfully

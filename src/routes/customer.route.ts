@@ -28,11 +28,39 @@ import { uploadProfileImageToCloudinary } from "../middlewares/cloudinary-upload
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
  *               profileImageUrl: { type: string }
+ *               profileImage:
+ *                 type: string
+ *                 format: binary
+ *               firstName: { type: string }
+ *               lastName: { type: string }
+ *               email: { type: string, format: email }
+ *               phoneNumber: { type: string }
+ *     responses:
+ *       "200":
+ *         description: Current customer profile updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: "#/components/schemas/ApiResponse"
+ *   post:
+ *     summary: Update current customer profile (alias of PUT)
+ *     tags: [Customer]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profileImageUrl: { type: string }
+ *               profileImage:
+ *                 type: string
+ *                 format: binary
  *               firstName: { type: string }
  *               lastName: { type: string }
  *               email: { type: string, format: email }
@@ -116,11 +144,14 @@ import { uploadProfileImageToCloudinary } from "../middlewares/cloudinary-upload
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
  *               profileImageUrl: { type: string }
+ *               profileImage:
+ *                 type: string
+ *                 format: binary
  *               firstName: { type: string }
  *               lastName: { type: string }
  *               email: { type: string, format: email }
