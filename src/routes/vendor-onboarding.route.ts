@@ -11,6 +11,8 @@ import {
 } from "../zod-schema/vendor-onboarding.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
+import { uploadVendorOnboardingFiles } from "../middlewares/file-upload.middleware.js";
+import { uploadVendorOnboardingAssetsToCloudinary } from "../middlewares/cloudinary-upload.middleware.js";
 
 /**
  * @swagger
@@ -128,6 +130,8 @@ class VendorOnboardingRouter {
       "/step-2",
       authMiddleware,
       roleGuardMiddleware(["vendor"]),
+      uploadVendorOnboardingFiles,
+      uploadVendorOnboardingAssetsToCloudinary,
       zodValidation(vendorOnboardingStep2Schema),
       this.vendorOnboardingController.step2,
     );
@@ -135,6 +139,8 @@ class VendorOnboardingRouter {
       "/step-3",
       authMiddleware,
       roleGuardMiddleware(["vendor"]),
+      uploadVendorOnboardingFiles,
+      uploadVendorOnboardingAssetsToCloudinary,
       zodValidation(vendorOnboardingStep3Schema),
       this.vendorOnboardingController.step3,
     );

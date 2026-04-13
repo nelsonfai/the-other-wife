@@ -6,6 +6,8 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
 import { zodValidation } from "../middlewares/validation.js";
 import { updateCurrentCustomerProfileSchema } from "../zod-schema/customer.schema.js";
+import { uploadProfileImage } from "../middlewares/file-upload.middleware.js";
+import { uploadProfileImageToCloudinary } from "../middlewares/cloudinary-upload.middleware.js";
 
 /**
  * @swagger
@@ -222,6 +224,16 @@ class CustomerRouter {
     this.router.put(
       "/me",
       roleGuardMiddleware(["customer"]),
+      uploadProfileImage,
+      uploadProfileImageToCloudinary,
+      zodValidation(updateCurrentCustomerProfileSchema),
+      this.customerController.updateCurrentCustomerProfile,
+    );
+    this.router.post(
+      "/me",
+      roleGuardMiddleware(["customer"]),
+      uploadProfileImage,
+      uploadProfileImageToCloudinary,
       zodValidation(updateCurrentCustomerProfileSchema),
       this.customerController.updateCurrentCustomerProfile,
     );
@@ -238,6 +250,8 @@ class CustomerRouter {
     this.router.put(
       "/:id",
       roleGuardMiddleware(["customer"]),
+      uploadProfileImage,
+      uploadProfileImageToCloudinary,
       zodValidation(updateCurrentCustomerProfileSchema),
       this.customerController.updateCustomerProfile,
     );

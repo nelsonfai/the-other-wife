@@ -4,6 +4,59 @@ import z from "zod";
 import { emailSchema, phoneNumberSchema } from "./auth.schema.js";
 
 const nonEmptyString = z.string().trim().min(1);
+const parseStringArrayField = (value: unknown) => {
+  if (value === undefined || value === null || value === "") {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return [];
+  }
+
+  if (trimmed.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      return [trimmed];
+    }
+  }
+
+  return trimmed
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const parseJsonObject = (value: unknown) => {
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+  return value;
+};
+
+const strictTrueFromFormSchema = z.preprocess((value) => {
+  if (typeof value === "string") {
+    return value.toLowerCase() === "true";
+  }
+  return value;
+}, z.literal(true));
+
 const cloudinaryDocumentTypeSchema = z.enum([
   "governmentId",
   "businessCertificate",
@@ -42,8 +95,8 @@ export const vendorOnboardingStep2Schema = z.object({
   businessName: nonEmptyString,
   businessDescription: z.string().trim().optional(),
   businessLogoUrl: z.string().trim().optional(),
-  yearsOfExperience: z.number().int().min(0),
-  cuisines: z.array(nonEmptyString).min(1),
+  yearsOfExperience: z.coerce.number().int().min(0),
+  cuisines: z.preprocess(parseStringArrayField, z.array(nonEmptyString).min(1)),
   bankName: nonEmptyString,
   accountNumber: z.string().trim().regex(/^\d{10,}$/),
   accountName: z.string().trim().optional(),
@@ -58,10 +111,10 @@ const onboardingDocumentSchema = z.object({
 });
 
 export const vendorOnboardingStep3Schema = z.object({
-  governmentId: onboardingDocumentSchema,
-  businessCertificate: onboardingDocumentSchema,
-  displayImage: onboardingDocumentSchema,
-  confirmedAccuracy: z.literal(true),
-  acceptedTerms: z.literal(true),
-  acceptedVerification: z.literal(true),
+  governmentId: z.preprocess(parseJsonObject, onboardingDocumentSchema),
+  businessCertificate: z.preprocess(parseJsonObject, onboardingDocumentSchema),
+  displayImage: z.preprocess(parseJsonObject, onboardingDocumentSchema),
+  confirmedAccuracy: strictTrueFromFormSchema,
+  acceptedTerms: strictTrueFromFormSchema,
+  acceptedVerification: strictTrueFromFormSchema,
 });

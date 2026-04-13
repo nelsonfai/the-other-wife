@@ -7,6 +7,7 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
 import { zodValidation } from "../middlewares/validation.js";
 import { cloudinaryUploadAssetTypeSchema } from "../zod-schema/cloudinary.schema.js";
+import { uploadSingleImageFile } from "../middlewares/file-upload.middleware.js";
 
 const cloudinaryUploadSignatureRequestSchema = z.object({
   assetType: cloudinaryUploadAssetTypeSchema,
@@ -56,6 +57,14 @@ class UploadRouter {
       roleGuardMiddleware(["customer", "vendor"]),
       zodValidation(cloudinaryUploadSignatureRequestSchema),
       this.uploadController.getCloudinaryUploadSignature,
+    );
+    this.router.post(
+      "/cloudinary-file",
+      authMiddleware,
+      roleGuardMiddleware(["customer", "vendor"]),
+      uploadSingleImageFile,
+      zodValidation(cloudinaryUploadSignatureRequestSchema),
+      this.uploadController.uploadImageFile,
     );
   }
 }

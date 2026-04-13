@@ -7,11 +7,16 @@ import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
 import { statusCheck } from "../middlewares/status-check.middleware.js";
 import { optionalAuthMiddleware } from "../middlewares/optional-auth.middleware.js";
 import { zodValidation } from "../middlewares/validation.js";
+import { uploadMealImages } from "../middlewares/file-upload.middleware.js";
 import {
   createMealSchema,
   createMealReviewSchema,
   updateMealSchema,
 } from "../zod-schema/meal.schema.js";
+import {
+  ensureCreateMealImage,
+  uploadMealImagesToCloudinary,
+} from "../middlewares/cloudinary-upload.middleware.js";
 
 /**
  * @swagger
@@ -262,6 +267,8 @@ class MealRouter {
       authMiddleware,
       roleGuardMiddleware(["vendor"]),
       statusCheck(["approved"]),
+      uploadMealImages,
+      uploadMealImagesToCloudinary,
       zodValidation(updateMealSchema),
       this.mealController.updateMeal,
     );
@@ -284,6 +291,9 @@ class MealRouter {
       authMiddleware,
       roleGuardMiddleware(["vendor"]),
       statusCheck(["approved"]),
+      uploadMealImages,
+      uploadMealImagesToCloudinary,
+      ensureCreateMealImage,
       zodValidation(createMealSchema),
       this.mealController.createMeal,
     );

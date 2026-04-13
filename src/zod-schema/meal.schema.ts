@@ -3,6 +3,45 @@
 import z from "zod";
 import { cloudinaryAssetUrlSchema } from "./cloudinary.schema.js";
 
+const parseStringArrayField = (
+  value: unknown,
+): string[] | undefined | unknown => {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return [];
+  }
+
+  if (trimmed.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      return [trimmed];
+    }
+  }
+
+  return trimmed
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const nonEmptyStringArraySchema = z.array(z.string().trim().min(1));
+
 export const createMealReviewSchema = z.object({
   orderId: z.string().trim().min(1),
   rating: z.number().int().min(1).max(5),
@@ -12,26 +51,28 @@ export const createMealReviewSchema = z.object({
 export const createMealSchema = z.object({
   name: z.string().trim().min(1),
   description: z.string().trim().min(1),
-  price: z.number().positive(),
+  price: z.coerce.number().positive(),
   categoryName: z.string().trim().min(1),
   availableFrom: z.string().trim().min(1),
   availableUntil: z.string().trim().min(1),
-  primaryImageUrl: cloudinaryAssetUrlSchema,
-  tags: z.array(z.string().trim().min(1)).default([]),
+  primaryImageUrl: cloudinaryAssetUrlSchema.optional(),
+  tags: z.preprocess(parseStringArrayField, nonEmptyStringArraySchema).default([]),
 });
 
 export const updateMealSchema = z
   .object({
     name: z.string().trim().min(1).optional(),
     description: z.string().trim().min(1).optional(),
-    price: z.number().positive().optional(),
+    price: z.coerce.number().positive().optional(),
     categoryName: z.string().trim().min(1).optional(),
     availableFrom: z.string().trim().min(1).optional(),
     availableUntil: z.string().trim().min(1).optional(),
     primaryImageUrl: cloudinaryAssetUrlSchema.optional(),
-    additionalImages: z.array(cloudinaryAssetUrlSchema).optional(),
-    tags: z.array(z.string().trim().min(1)).optional(),
-    preparationTime: z.number().int().min(0).optional(),
+    additionalImages: z
+      .preprocess(parseStringArrayField, z.array(cloudinaryAssetUrlSchema))
+      .optional(),
+    tags: z.preprocess(parseStringArrayField, nonEmptyStringArraySchema).optional(),
+    preparationTime: z.coerce.number().int().min(0).optional(),
     servingSize: z.string().trim().min(1).optional(),
     additionalData: z.string().trim().optional(),
     isAvailable: z.enum(["pending", "available", "unavailable"]).optional(),

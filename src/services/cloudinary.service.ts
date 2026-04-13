@@ -1,6 +1,7 @@
 /** @format */
 
 import crypto from "crypto";
+import { v2 as cloudinary } from "cloudinary";
 import {
   cloudinaryApiKey,
   cloudinaryApiSecret,
@@ -14,13 +15,15 @@ type CloudinaryDocumentType =
   | "governmentId"
   | "businessCertificate"
   | "displayImage";
-type CloudinaryAssetType =
+export type CloudinaryAssetType =
   | "vendorDocument"
   | "vendorBusinessLogo"
   | "mealImage"
   | "customerProfileImage";
 
 export class CloudinaryService {
+  private static isConfigured = false;
+
   private ensureConfigured = () => {
     if (!cloudinaryCloudName || !cloudinaryApiKey || !cloudinaryApiSecret) {
       throw new BadRequestException(
@@ -28,6 +31,16 @@ export class CloudinaryService {
         HttpStatus.BAD_REQUEST,
         ErrorCode.VALIDATION_ERROR,
       );
+    }
+
+    if (!CloudinaryService.isConfigured) {
+      cloudinary.config({
+        cloud_name: cloudinaryCloudName,
+        api_key: cloudinaryApiKey,
+        api_secret: cloudinaryApiSecret,
+        secure: true,
+      });
+      CloudinaryService.isConfigured = true;
     }
   };
 
@@ -64,5 +77,56 @@ export class CloudinaryService {
       signature,
       uploadUrl: `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/auto/upload`,
     };
+  };
+
+  uploadImageBuffer = async (
+    buffer: Buffer,
+    userId: string,
+    assetType: CloudinaryAssetType,
+    assetLabel?: string,
+  ): Promise<{ secureUrl: string; publicId: string }> => {
+    this.ensureConfigured();
+
+    if (!buffer?.length) {
+      throw new BadRequestException(
+        "Image file is required",
+        HttpStatus.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
+
+    const timestamp = Math.floor(Date.now() / 1000);
+    const assetName = assetLabel ?? assetType;
+    const folder = `the-other-wife/${assetType}/${userId}`;
+    const publicId = `${assetName}-${timestamp}-${crypto.randomInt(1000, 9999)}`;
+
+    return await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder,
+          public_id: publicId,
+          resource_type: "image",
+        },
+        (error, result) => {
+          if (error || !result?.secure_url) {
+            reject(
+              new BadRequestException(
+                "Cloudinary upload failed",
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.VALIDATION_ERROR,
+              ),
+            );
+            return;
+          }
+
+          resolve({
+            secureUrl: result.secure_url,
+            publicId: result.public_id,
+          });
+        },
+      );
+
+      uploadStream.end(buffer);
+    });
   };
 }

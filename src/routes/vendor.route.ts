@@ -7,6 +7,8 @@ import { roleGuardMiddleware } from "../middlewares/role-guard.middleware.js";
 import { optionalAuthMiddleware } from "../middlewares/optional-auth.middleware.js";
 import { zodValidation } from "../middlewares/validation.js";
 import { updateVendorProfileSchema } from "../zod-schema/vendor.schema.js";
+import { uploadBusinessLogo } from "../middlewares/file-upload.middleware.js";
+import { uploadBusinessLogoToCloudinary } from "../middlewares/cloudinary-upload.middleware.js";
 
 /**
  * @swagger
@@ -362,6 +364,8 @@ class VendorRouter {
       "/me",
       authMiddleware,
       roleGuardMiddleware(["vendor"]),
+      uploadBusinessLogo,
+      uploadBusinessLogoToCloudinary,
       zodValidation(updateVendorProfileSchema),
       this.vendorController.updateVendorProfile,
     );
