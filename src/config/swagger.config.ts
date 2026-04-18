@@ -278,6 +278,38 @@ const swaggerDefinition = {
           },
         },
       },
+      VendorAvailabilityUpdateRequest: {
+        type: "object",
+        properties: {
+          isAvailable: {
+            type: "boolean",
+          },
+          openingHours: {
+            $ref: "#/components/schemas/VendorOpeningHours",
+          },
+        },
+      },
+      VendorAvailabilityResponse: {
+        type: "object",
+        properties: {
+          status: {
+            type: "string",
+            example: "ok",
+          },
+          message: {
+            type: "string",
+            example: "Vendor availability fetched successfully",
+          },
+          data: {
+            type: "object",
+            properties: {
+              availability: {
+                $ref: "#/components/schemas/VendorAvailability",
+              },
+            },
+          },
+        },
+      },
       VendorOnboardingStep1Request: {
         type: "object",
         required: [

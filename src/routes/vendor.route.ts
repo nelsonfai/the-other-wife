@@ -106,7 +106,7 @@ import { uploadBusinessLogoToCloudinary } from "../middlewares/cloudinary-upload
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/VendorAvailability"
+ *               $ref: "#/components/schemas/VendorAvailabilityResponse"
  *       "401":
  *         description: Unauthorized
  *       "403":
@@ -121,18 +121,14 @@ import { uploadBusinessLogoToCloudinary } from "../middlewares/cloudinary-upload
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               isAvailable: { type: boolean }
- *               openingHours:
- *                 $ref: "#/components/schemas/VendorOpeningHours"
+ *             $ref: "#/components/schemas/VendorAvailabilityUpdateRequest"
  *     responses:
  *       "200":
  *         description: Vendor availability updated successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: "#/components/schemas/VendorAvailability"
+ *               $ref: "#/components/schemas/VendorAvailabilityResponse"
  *       "401":
  *         description: Unauthorized
  *       "403":
