@@ -127,6 +127,15 @@ const swaggerDefinition = {
             type: "string",
             description: "The customer profile image url",
           },
+          expoTokens: {
+            type: "array",
+            items: { type: "string" },
+            description: "Expo push notification tokens for the customer device(s)",
+          },
+          pushNotificationsEnabled: {
+            type: "boolean",
+            description: "Whether push notifications are enabled for this customer",
+          },
         },
       },
       Vendor: {
@@ -155,6 +164,15 @@ const swaggerDefinition = {
           businessLogoUrl: {
             type: "string",
             description: "The vendor business logo url",
+          },
+          expoTokens: {
+            type: "array",
+            items: { type: "string" },
+            description: "Expo push notification tokens for the vendor device(s)",
+          },
+          pushNotificationsEnabled: {
+            type: "boolean",
+            description: "Whether push notifications are enabled for this vendor",
           },
           approvalStatus: {
             $ref: "#/components/schemas/VendorApprovalStatus",

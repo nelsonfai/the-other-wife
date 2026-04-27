@@ -6,6 +6,8 @@ export interface CustomerDocument extends Document {
   userId: mongoose.Types.ObjectId;
   addressId: mongoose.Types.ObjectId;
   profileImageUrl: string;
+  expoTokens: string[];
+  pushNotificationsEnabled: boolean;
 }
 
 const CustomerSchema = new Schema({
@@ -24,6 +26,16 @@ const CustomerSchema = new Schema({
   profileImageUrl: {
     type: String,
     required: false,
+  },
+  expoTokens: {
+    type: [String],
+    required: true,
+    default: [],
+  },
+  pushNotificationsEnabled: {
+    type: Boolean,
+    required: true,
+    default: true,
   },
 });
 

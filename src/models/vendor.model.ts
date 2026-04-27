@@ -19,6 +19,8 @@ export interface VendorDocument extends Document {
   ratingAverage: number;
   ratingCount: number;
   ratingScore: number;
+  expoTokens: string[];
+  pushNotificationsEnabled: boolean;
   additionalData: Object;
 }
 
@@ -127,6 +129,16 @@ const VendorSchema = new Schema({
     required: true,
     default: 0,
     min: 0,
+  },
+  expoTokens: {
+    type: [String],
+    required: true,
+    default: [],
+  },
+  pushNotificationsEnabled: {
+    type: Boolean,
+    required: true,
+    default: true,
   },
   additionalData: {
     type: Object,

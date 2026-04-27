@@ -66,12 +66,14 @@ export class VendorController {
         { id: string },
         {},
         {
-          firstName: string;
-          lastName: string;
-          phoneNumber: string;
-          businessName: string;
-          businessDescription: string;
-          businessLogoUrl: string;
+          firstName?: string;
+          lastName?: string;
+          phoneNumber?: string;
+          businessName?: string;
+          businessDescription?: string;
+          businessLogoUrl?: string;
+          expoTokens?: string[];
+          pushNotificationsEnabled?: boolean;
         }
       >,
       res: Response,
@@ -85,6 +87,8 @@ export class VendorController {
         businessName,
         businessDescription,
         businessLogoUrl,
+        expoTokens,
+        pushNotificationsEnabled,
       } = req.body;
 
       try {
@@ -95,6 +99,8 @@ export class VendorController {
           businessName,
           businessDescription,
           businessLogoUrl,
+          expoTokens,
+          pushNotificationsEnabled,
         });
         return res.status(HttpStatus.OK).json({
           status: "ok",

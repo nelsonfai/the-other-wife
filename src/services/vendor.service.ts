@@ -214,12 +214,14 @@ export class VendorService {
       session: ClientSession,
       userId: string,
       body: {
-        firstName: string;
-        lastName: string;
-        phoneNumber: string;
-        businessName: string;
-        businessDescription: string;
-        businessLogoUrl: string;
+        firstName?: string;
+        lastName?: string;
+        phoneNumber?: string;
+        businessName?: string;
+        businessDescription?: string;
+        businessLogoUrl?: string;
+        expoTokens?: string[];
+        pushNotificationsEnabled?: boolean;
       },
     ) => {
       if (!userId) {
@@ -237,9 +239,11 @@ export class VendorService {
         businessName,
         businessDescription,
         businessLogoUrl,
+        expoTokens,
+        pushNotificationsEnabled,
       } = body;
 
-      const vendorData: Record<string, string> = {};
+      const vendorData: Record<string, any> = {};
       const userData: Record<string, string> = {};
 
       if (firstName) userData.firstName = firstName;
@@ -250,6 +254,10 @@ export class VendorService {
       if (businessDescription)
         vendorData.businessDescription = businessDescription;
       if (businessLogoUrl) vendorData.businessLogoUrl = businessLogoUrl;
+      if (expoTokens !== undefined) vendorData.expoTokens = expoTokens;
+      if (pushNotificationsEnabled !== undefined) {
+        vendorData.pushNotificationsEnabled = pushNotificationsEnabled;
+      }
 
       const vendor = await Vendor.findOneAndUpdate(
         { userId },

@@ -40,6 +40,8 @@ export const updateVendorProfileSchema = z
     businessName: z.string().trim().optional(),
     businessDescription: z.string().trim().optional(),
     businessLogoUrl: cloudinaryAssetUrlSchema.optional(),
+    expoTokens: z.preprocess(parseJsonObject, z.array(z.string().trim())).optional(),
+    pushNotificationsEnabled: z.coerce.boolean().optional(),
   })
   .refine(
     (value) => Object.values(value).some((field) => field !== undefined),

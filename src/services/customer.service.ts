@@ -43,15 +43,29 @@ export class CustomerService {
       lastName?: string;
       email?: string;
       phoneNumber?: string;
+      expoTokens?: string[];
+      pushNotificationsEnabled?: boolean;
     },
   ) => {
-    const { profileImageUrl, firstName, lastName, email, phoneNumber } = body;
+    const {
+      profileImageUrl,
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      expoTokens,
+      pushNotificationsEnabled,
+    } = body;
 
     const customer = await Customer.findOneAndUpdate(
       { _id: customerId, userId },
       {
         $set: {
           ...(profileImageUrl !== undefined && { profileImageUrl }),
+          ...(expoTokens !== undefined && { expoTokens }),
+          ...(pushNotificationsEnabled !== undefined && {
+            pushNotificationsEnabled,
+          }),
         },
       },
       { new: true },
@@ -162,6 +176,8 @@ export class CustomerService {
         lastName?: string;
         email?: string;
         phoneNumber?: string;
+        expoTokens?: string[];
+        pushNotificationsEnabled?: boolean;
       },
     ) => {
       if (!customerId) {
@@ -191,6 +207,8 @@ export class CustomerService {
         lastName?: string;
         email?: string;
         phoneNumber?: string;
+        expoTokens?: string[];
+        pushNotificationsEnabled?: boolean;
       },
     ) => {
       if (!userId) {

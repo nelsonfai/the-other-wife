@@ -40,6 +40,10 @@ import { uploadProfileImageToCloudinary } from "../middlewares/cloudinary-upload
  *               lastName: { type: string }
  *               email: { type: string, format: email }
  *               phoneNumber: { type: string }
+ *               expoTokens:
+ *                 type: array
+ *                 items: { type: string }
+ *               pushNotificationsEnabled: { type: boolean }
  *     responses:
  *       "200":
  *         description: Current customer profile updated
@@ -65,6 +69,10 @@ import { uploadProfileImageToCloudinary } from "../middlewares/cloudinary-upload
  *               lastName: { type: string }
  *               email: { type: string, format: email }
  *               phoneNumber: { type: string }
+ *               expoTokens:
+ *                 type: array
+ *                 items: { type: string }
+ *               pushNotificationsEnabled: { type: boolean }
  *     responses:
  *       "200":
  *         description: Current customer profile updated
@@ -156,6 +164,10 @@ import { uploadProfileImageToCloudinary } from "../middlewares/cloudinary-upload
  *               lastName: { type: string }
  *               email: { type: string, format: email }
  *               phoneNumber: { type: string }
+ *               expoTokens:
+ *                 type: array
+ *                 items: { type: string }
+ *               pushNotificationsEnabled: { type: boolean }
  *     responses:
  *       "200":
  *         description: Customer updated

@@ -3,6 +3,18 @@
 import z from "zod";
 import { cloudinaryAssetUrlSchema } from "./cloudinary.schema.js";
 
+const parseJsonArray = (value: unknown) => {
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+
+  return value;
+};
+
 export const updateCurrentCustomerProfileSchema = z
   .object({
     profileImageUrl: cloudinaryAssetUrlSchema.optional(),
@@ -10,6 +22,8 @@ export const updateCurrentCustomerProfileSchema = z
     lastName: z.string().trim().optional(),
     email: z.email().trim().optional(),
     phoneNumber: z.string().trim().optional(),
+    expoTokens: z.preprocess(parseJsonArray, z.array(z.string().trim())).optional(),
+    pushNotificationsEnabled: z.coerce.boolean().optional(),
   })
   .refine(
     (value) =>

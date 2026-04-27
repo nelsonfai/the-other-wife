@@ -156,6 +156,10 @@ import { uploadBusinessLogoToCloudinary } from "../middlewares/cloudinary-upload
  *               businessName: { type: string }
  *               businessDescription: { type: string }
  *               businessLogoUrl: { type: string }
+ *               expoTokens:
+ *                 type: array
+ *                 items: { type: string }
+ *               pushNotificationsEnabled: { type: boolean }
  *               businessLogo:
  *                 type: string
  *                 format: binary
