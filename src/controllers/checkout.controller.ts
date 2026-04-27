@@ -40,6 +40,7 @@ export class CheckoutController {
         {
           addressId: string;
           cartUpdatedAt: string;
+          useWallet?: boolean;
           paymentProvider?: "paystack" | "cash" | "wallet";
         }
       >,
@@ -50,6 +51,7 @@ export class CheckoutController {
         customerId,
         req.body.addressId,
         req.body.cartUpdatedAt,
+        req.body.useWallet,
         req.body.paymentProvider,
       );
 

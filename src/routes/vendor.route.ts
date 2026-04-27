@@ -17,7 +17,7 @@ import { uploadBusinessLogoToCloudinary } from "../middlewares/cloudinary-upload
  * @swagger
  * /api/v1/vendors/featured:
  *   get:
- *     summary: Get featured vendors ranked by ratings
+ *     summary: Get featured vendors ranked by rating score and order volume
  *     tags: [Vendor]
  *     parameters:
  *       - in: query

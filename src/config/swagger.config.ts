@@ -208,6 +208,11 @@ const swaggerDefinition = {
             description:
               "Weighted rating score used for featured vendor ranking",
           },
+          numberOfOrders: {
+            type: "number",
+            description:
+              "Number of paid/confirmed orders used as a featured vendor ranking tiebreaker",
+          },
         },
       },
       MealReviewRequest: {
@@ -490,6 +495,12 @@ const swaggerDefinition = {
               "Concurrency token from /checkout/preview to ensure the cart has not changed.",
             example: "2026-03-17T12:00:00.000Z",
           },
+          useWallet: {
+            type: "boolean",
+            default: false,
+            description:
+              "If true, reserve available wallet balance first and charge Paystack for the remainder.",
+          },
           paymentProvider: {
             $ref: "#/components/schemas/CheckoutPaymentProvider",
             default: "paystack",
@@ -502,6 +513,28 @@ const swaggerDefinition = {
           order: {
             type: "object",
             description: "Created order record",
+            properties: {
+              subtotal: { type: "number" },
+              serviceCharge: {
+                type: "number",
+                description:
+                  "Calculated service charge applied during checkout.",
+              },
+              deliveryFee: { type: "number" },
+              taxAmount: { type: "number" },
+              discountAmount: { type: "number" },
+              totalAmount: { type: "number" },
+              walletAmountApplied: {
+                type: "number",
+                description:
+                  "Amount reserved/applied from wallet for this order.",
+              },
+              paystackAmountDue: {
+                type: "number",
+                description:
+                  "Remaining amount charged through Paystack for this order.",
+              },
+            },
           },
           payment: {
             type: "object",
@@ -525,11 +558,44 @@ const swaggerDefinition = {
                 type: "string",
                 nullable: true,
               },
+              amount: {
+                type: "number",
+                description:
+                  "Amount to be charged by the selected provider (Paystack remainder for split payments).",
+              },
+              providerPayload: {
+                type: "object",
+                properties: {
+                  split: {
+                    type: "object",
+                    properties: {
+                      totalAmount: { type: "number" },
+                      walletAmountApplied: { type: "number" },
+                      paystackAmountDue: { type: "number" },
+                    },
+                  },
+                },
+              },
             },
           },
           preview: {
             type: "object",
             description: "Checkout snapshot used to create the order",
+            properties: {
+              pricing: {
+                type: "object",
+                properties: {
+                  subtotal: { type: "number" },
+                  serviceCharge: { type: "number" },
+                  deliveryFee: { type: "number" },
+                  taxAmount: { type: "number" },
+                  discountAmount: { type: "number" },
+                  totalAmount: { type: "number" },
+                  walletAmountApplied: { type: "number" },
+                  paystackAmountDue: { type: "number" },
+                },
+              },
+            },
           },
         },
       },

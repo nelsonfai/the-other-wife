@@ -16,6 +16,8 @@ import {
   paystackBaseUrl,
 } from "../constants/env.js";
 import { transaction } from "../util/transaction.util.js";
+import { PromoService } from "./promo.service.js";
+import { WalletService } from "./wallet.service.js";
 
 type InitializePaystackInput = {
   email: string;
@@ -32,6 +34,14 @@ type PaystackInitializeResponse = {
 };
 
 export class PaymentService {
+  private promoService: PromoService;
+  private walletService: WalletService;
+
+  constructor() {
+    this.promoService = new PromoService();
+    this.walletService = new WalletService();
+  }
+
   initializePaystackPayment = async (
     payload: InitializePaystackInput,
   ): Promise<PaystackInitializeResponse> => {
@@ -121,7 +131,7 @@ export class PaymentService {
       );
     }
 
-    if (event.event !== "charge.success") {
+    if (event.event !== "charge.success" && event.event !== "charge.failed") {
       return { handled: false };
     }
 
@@ -143,6 +153,56 @@ export class PaymentService {
         HttpStatus.NOT_FOUND,
         ErrorCode.RESOURCE_NOT_FOUND,
       );
+    }
+
+    if (event.event === "charge.failed") {
+      return await transaction.use(
+        async (
+          session: ClientSession,
+          paymentId: string,
+          providerPayload: Record<string, unknown>,
+        ) => {
+          const paymentRecord = await Payment.findById(paymentId).session(session);
+
+          if (!paymentRecord) {
+            throw new NotFoundException(
+              "Payment not found",
+              HttpStatus.NOT_FOUND,
+              ErrorCode.RESOURCE_NOT_FOUND,
+            );
+          }
+
+          if (paymentRecord.status === "succeeded") {
+            return { handled: true, payment: paymentRecord };
+          }
+
+          paymentRecord.status = "failed";
+          paymentRecord.providerPayload = providerPayload;
+          await paymentRecord.save({ session });
+
+          const order = await Order.findById(paymentRecord.orderId).session(session);
+
+          if (!order) {
+            throw new NotFoundException(
+              "Order not found",
+              HttpStatus.NOT_FOUND,
+              ErrorCode.RESOURCE_NOT_FOUND,
+            );
+          }
+
+          order.paymentStatus = "failed";
+          order.status = "payment_failed";
+          await order.save({ session });
+
+          await this.walletService.releaseReservedWalletForOrder(
+            session,
+            paymentRecord.customerId.toString(),
+            order._id.toString(),
+          );
+
+          return { handled: true, payment: paymentRecord, order };
+        },
+      )(payment._id.toString(), event.data);
     }
 
     if (payment.status === "succeeded") {
@@ -197,6 +257,22 @@ export class PaymentService {
         order.status = "paid";
         order.paidAt = paymentRecord.paidAt;
         await order.save({ session });
+
+        await this.walletService.finalizeReservedWalletForOrder(
+          session,
+          paymentRecord.customerId.toString(),
+          order._id.toString(),
+        );
+
+        try {
+          await this.promoService.creditEligiblePaidOrder(session, order);
+        } catch (error: any) {
+          console.error("Skipping promo credit after webhook confirmation", {
+            orderId: order._id?.toString?.(),
+            paymentId: paymentRecord._id?.toString?.(),
+            message: error?.message,
+          });
+        }
 
         await Cart.findOneAndUpdate(
           { customerId: paymentRecord.customerId },

@@ -61,19 +61,22 @@ import {
  *               value:
  *                 addressId: "67ff2f8be1234567890abcde"
  *                 cartUpdatedAt: "2026-03-17T12:00:00.000Z"
+ *                 useWallet: false
  *                 paymentProvider: "paystack"
  *             cash:
  *               summary: Confirm checkout with cash payment
  *               value:
  *                 addressId: "67ff2f8be1234567890abcde"
  *                 cartUpdatedAt: "2026-03-17T12:00:00.000Z"
+ *                 useWallet: false
  *                 paymentProvider: "cash"
- *             wallet:
- *               summary: Wallet payment is not implemented yet
+ *             split:
+ *               summary: Confirm checkout with wallet + Paystack split
  *               value:
  *                 addressId: "67ff2f8be1234567890abcde"
  *                 cartUpdatedAt: "2026-03-17T12:00:00.000Z"
- *                 paymentProvider: "wallet"
+ *                 useWallet: true
+ *                 paymentProvider: "paystack"
  *     responses:
  *       "201":
  *         description: Checkout confirmed successfully
@@ -87,7 +90,7 @@ import {
  *                     data:
  *                       $ref: "#/components/schemas/CheckoutConfirmResponse"
  *       "400":
- *         description: Validation error or wallet payment not implemented
+ *         description: Validation error
  *       "401":
  *         description: Unauthorized
  *       "403":

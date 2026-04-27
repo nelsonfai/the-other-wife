@@ -5,6 +5,7 @@ import { ErrorCode } from "../enums/error-code.enum.js";
 import { NotFoundException } from "../errors/not-found-exception.error.js";
 import { UnauthorizedExceptionError } from "../errors/unauthorized-exception.error.js";
 import Vendor from "../models/vendor.model.js";
+import Order from "../models/order.model.js";
 import User from "../models/user.model.js";
 import { BadRequestException } from "../errors/bad-request-exception.error.js";
 import { transaction } from "../util/transaction.util.js";
@@ -43,7 +44,7 @@ export class VendorService {
 
     const vendors = await Vendor.find(query)
       .select(
-        "businessName businessDescription businessLogoUrl ratingAverage ratingCount ratingScore addressId openingHours",
+        "businessName businessDescription businessLogoUrl approvalStatus isAvailable ratingAverage ratingCount ratingScore addressId openingHours",
       )
       .populate("addressId", "city state country")
       .sort({
@@ -53,12 +54,60 @@ export class VendorService {
       })
       .limit(normalizedLimit * 3);
 
-    const currentlyOpenVendors = vendors
+    const orderCountByVendorId = new Map<string, number>();
+    if (vendors.length > 0) {
+      const vendorIds = vendors.map((vendor) => vendor._id);
+      const orderCounts = await Order.aggregate<{
+        _id: any;
+        numberOfOrders: number;
+      }>([
+        {
+          $match: {
+            vendorId: { $in: vendorIds },
+            status: { $in: ["paid", "confirmed"] },
+          },
+        },
+        {
+          $group: {
+            _id: "$vendorId",
+            numberOfOrders: { $sum: 1 },
+          },
+        },
+      ]);
+
+      orderCounts.forEach((entry) => {
+        orderCountByVendorId.set(entry._id.toString(), entry.numberOfOrders);
+      });
+    }
+
+    const rankedVendors = vendors
+      .map((vendor) => {
+        const numberOfOrders = orderCountByVendorId.get(vendor._id.toString()) ?? 0;
+        return {
+          ...vendor.toObject(),
+          numberOfOrders,
+        };
+      })
       .filter((vendor) => isVendorReceivingOrders(vendor))
+      .sort((left, right) => {
+        if (right.ratingScore !== left.ratingScore) {
+          return right.ratingScore - left.ratingScore;
+        }
+
+        if (right.numberOfOrders !== left.numberOfOrders) {
+          return right.numberOfOrders - left.numberOfOrders;
+        }
+
+        if (right.ratingCount !== left.ratingCount) {
+          return right.ratingCount - left.ratingCount;
+        }
+
+        return right.ratingAverage - left.ratingAverage;
+      })
       .slice(0, normalizedLimit);
 
     return {
-      vendors: currentlyOpenVendors,
+      vendors: rankedVendors,
       meta: {
         limit: normalizedLimit,
         minimumReviews: this.featuredVendorMinimumReviews,

@@ -29,10 +29,13 @@ export interface OrderDocument extends Document {
   items: OrderItem[];
   addressSnapshot: OrderAddressSnapshot;
   subtotal: number;
+  serviceCharge: number;
   deliveryFee: number;
   taxAmount: number;
   discountAmount: number;
   totalAmount: number;
+  walletAmountApplied: number;
+  paystackAmountDue: number;
   status: string;
   paymentStatus: string;
   paidAt?: Date;
@@ -126,6 +129,11 @@ const OrderSchema = new Schema(
       type: Number,
       required: true,
     },
+    serviceCharge: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
     deliveryFee: {
       type: Number,
       required: true,
@@ -144,6 +152,18 @@ const OrderSchema = new Schema(
     totalAmount: {
       type: Number,
       required: true,
+    },
+    walletAmountApplied: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    paystackAmountDue: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
     },
     status: {
       type: String,

@@ -16,6 +16,7 @@ import { ErrorCode } from "../enums/error-code.enum.js";
 import { transaction } from "../util/transaction.util.js";
 import { PaymentService } from "./payment.service.js";
 import { isVendorReceivingOrders } from "../util/vendor-opening-hours.util.js";
+import { WalletService } from "./wallet.service.js";
 
 type CheckoutPaymentProvider = "paystack" | "cash" | "wallet";
 
@@ -30,6 +31,7 @@ type CheckoutItem = {
 
 type CheckoutPricing = {
   subtotal: number;
+  serviceCharge: number;
   deliveryFee: number;
   taxAmount: number;
   discountAmount: number;
@@ -64,10 +66,24 @@ type CheckoutPreviewResult = {
 
 export class CheckoutService {
   private paymentService: PaymentService;
+  private walletService: WalletService;
+  private readonly serviceChargeThreshold = 15000;
+  private readonly serviceChargeRateBelowThreshold = 0.049;
+  private readonly serviceChargeRateAtOrAboveThreshold = 0.029;
 
   constructor() {
     this.paymentService = new PaymentService();
+    this.walletService = new WalletService();
   }
+
+  private calculateServiceCharge = (subtotal: number) => {
+    const rate =
+      subtotal < this.serviceChargeThreshold
+        ? this.serviceChargeRateBelowThreshold
+        : this.serviceChargeRateAtOrAboveThreshold;
+
+    return Math.round(subtotal * rate);
+  };
 
   private getCheckoutContext = async (
     customerId: string,
@@ -173,6 +189,7 @@ export class CheckoutService {
     }
 
     const subtotal = items.reduce((total, item) => total + item.lineTotal, 0);
+    const serviceCharge = this.calculateServiceCharge(subtotal);
 
     return {
       cart,
@@ -181,10 +198,11 @@ export class CheckoutService {
       items,
       pricing: {
         subtotal,
+        serviceCharge,
         deliveryFee: 0,
         taxAmount: 0,
         discountAmount: 0,
-        totalAmount: subtotal,
+        totalAmount: subtotal + serviceCharge,
         currency: "NGN",
       },
     };
@@ -227,11 +245,20 @@ export class CheckoutService {
     customerId: string,
     addressId: string,
     cartUpdatedAt: string,
+    useWallet = false,
     paymentProvider: CheckoutPaymentProvider = "paystack",
   ) => {
     if (paymentProvider === "wallet") {
       throw new BadRequestException(
         "Wallet payment is not implemented yet",
+        HttpStatus.BAD_REQUEST,
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
+
+    if (paymentProvider === "cash" && useWallet) {
+      throw new BadRequestException(
+        "Wallet split payment is only supported with Paystack for now",
         HttpStatus.BAD_REQUEST,
         ErrorCode.VALIDATION_ERROR,
       );
@@ -299,16 +326,39 @@ export class CheckoutService {
                 longitude: checkoutContext.address.longitude,
               },
               subtotal: checkoutContext.pricing.subtotal,
+              serviceCharge: checkoutContext.pricing.serviceCharge,
               deliveryFee: checkoutContext.pricing.deliveryFee,
               taxAmount: checkoutContext.pricing.taxAmount,
               discountAmount: checkoutContext.pricing.discountAmount,
               totalAmount: checkoutContext.pricing.totalAmount,
+              walletAmountApplied: 0,
+              paystackAmountDue: checkoutContext.pricing.totalAmount,
               status: "pending_payment",
               paymentStatus: "pending",
             },
           ],
           { session },
         );
+
+        let walletAmountApplied = 0;
+        let paystackAmountDue = checkoutContext.pricing.totalAmount;
+
+        if (useWallet) {
+          const walletSplit = await this.walletService.reserveWalletAmountForOrder(
+            session,
+            currentCustomerId,
+            newOrder._id.toString(),
+            checkoutContext.pricing.totalAmount,
+            checkoutContext.pricing.currency,
+          );
+
+          walletAmountApplied = walletSplit.walletAmountApplied;
+          paystackAmountDue = walletSplit.paystackAmountDue;
+
+          newOrder.walletAmountApplied = walletAmountApplied;
+          newOrder.paystackAmountDue = paystackAmountDue;
+          await newOrder.save({ session });
+        }
 
         const [newPayment] = await Payment.create(
           [
@@ -317,10 +367,19 @@ export class CheckoutService {
               customerId: currentCustomerId,
               provider: paymentProvider,
               reference: `tow_${crypto.randomUUID().replace(/-/g, "")}`,
-              amount: checkoutContext.pricing.totalAmount,
+              amount: paystackAmountDue,
               currency: checkoutContext.pricing.currency,
               status:
-                paymentProvider === "paystack" ? "initialized" : "pending",
+                paymentProvider === "paystack" && paystackAmountDue > 0
+                  ? "initialized"
+                  : "pending",
+              providerPayload: {
+                split: {
+                  totalAmount: checkoutContext.pricing.totalAmount,
+                  walletAmountApplied,
+                  paystackAmountDue,
+                },
+              },
             },
           ],
           { session },
@@ -346,7 +405,11 @@ export class CheckoutService {
             longitude: checkoutContext.address.longitude,
           },
           items: checkoutContext.items,
-          pricing: checkoutContext.pricing,
+          pricing: {
+            ...checkoutContext.pricing,
+            walletAmountApplied,
+            paystackAmountDue,
+          },
         };
 
         return {
@@ -387,6 +450,62 @@ export class CheckoutService {
       };
     }
 
+    if (payment.amount <= 0) {
+      const paidAt = new Date();
+      const [updatedOrder, updatedPayment] = await transaction.use(
+        async (
+          session: ClientSession,
+          orderId: string,
+          paymentId: string,
+          currentCustomerId: string,
+        ) => {
+          const orderRecord = await Order.findById(orderId).session(session);
+          const paymentRecord = await Payment.findById(paymentId).session(session);
+
+          if (!orderRecord || !paymentRecord) {
+            throw new NotFoundException(
+              "Order or payment not found",
+              HttpStatus.NOT_FOUND,
+              ErrorCode.RESOURCE_NOT_FOUND,
+            );
+          }
+
+          orderRecord.status = "paid";
+          orderRecord.paymentStatus = "succeeded";
+          orderRecord.paidAt = paidAt;
+          await orderRecord.save({ session });
+
+          paymentRecord.status = "succeeded";
+          paymentRecord.paidAt = paidAt;
+          paymentRecord.providerPayload = {
+            ...(paymentRecord.providerPayload ?? {}),
+            walletOnly: true,
+          };
+          await paymentRecord.save({ session });
+
+          await this.walletService.finalizeReservedWalletForOrder(
+            session,
+            currentCustomerId,
+            orderId,
+          );
+
+          await Cart.findOneAndUpdate(
+            { customerId: currentCustomerId },
+            { $set: { meals: [], totalAmount: 0 } },
+            { session },
+          );
+
+          return [orderRecord, paymentRecord];
+        },
+      )(order._id.toString(), payment._id.toString(), customerId);
+
+      return {
+        order: updatedOrder,
+        payment: updatedPayment,
+        preview,
+      };
+    }
+
     try {
       const paymentInitialization =
         await this.paymentService.initializePaystackPayment({
@@ -416,14 +535,37 @@ export class CheckoutService {
         preview,
       };
     } catch (error) {
-      await Promise.all([
-        Payment.findByIdAndUpdate(payment._id, {
-          $set: { status: "failed" },
-        }),
-        Order.findByIdAndUpdate(order._id, {
-          $set: { status: "payment_failed", paymentStatus: "failed" },
-        }),
-      ]);
+      await transaction.use(
+        async (
+          session: ClientSession,
+          orderId: string,
+          paymentId: string,
+          currentCustomerId: string,
+        ) => {
+          await Promise.all([
+            Payment.findByIdAndUpdate(
+              paymentId,
+              {
+                $set: { status: "failed" },
+              },
+              { session },
+            ),
+            Order.findByIdAndUpdate(
+              orderId,
+              {
+                $set: { status: "payment_failed", paymentStatus: "failed" },
+              },
+              { session },
+            ),
+          ]);
+
+          await this.walletService.releaseReservedWalletForOrder(
+            session,
+            currentCustomerId,
+            orderId,
+          );
+        },
+      )(order._id.toString(), payment._id.toString(), customerId);
       throw error;
     }
   };

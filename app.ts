@@ -26,6 +26,7 @@ import { paymentRouter } from "./src/routes/payment.route.js";
 import { orderRouter } from "./src/routes/order.route.js";
 import { vendorOnboardingRouter } from "./src/routes/vendor-onboarding.route.js";
 import { uploadRouter } from "./src/routes/upload.route.js";
+import { walletRouter } from "./src/routes/wallet.route.js";
 
 export class App {
   app: Express;
@@ -101,6 +102,7 @@ export class App {
     this.app.use("/api/v1/checkout", checkoutRouter);
     this.app.use("/api/v1/orders", orderRouter);
     this.app.use("/api/v1/payments", paymentRouter);
+    this.app.use("/api/v1/wallet", walletRouter);
 
     this.app.get("/api-docs", async (_req, res) => {
       try {
