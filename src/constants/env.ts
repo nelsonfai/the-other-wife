@@ -23,6 +23,7 @@ export const paystackCallbackUrl: string = envconfig.PAYSTACK_CALLBACK_URL;
 export const cloudinaryCloudName: string = envconfig.CLOUDINARY_CLOUD_NAME;
 export const cloudinaryApiKey: string = envconfig.CLOUDINARY_API_KEY;
 export const cloudinaryApiSecret: string = envconfig.CLOUDINARY_API_SECRET;
+export const expoAccessToken: string | undefined = envconfig.EXPO_ACCESS_TOKEN;
 
 console.log("port", !!port);
 console.log("hostName", !!hostName);
@@ -42,3 +43,4 @@ console.log("paystackCallbackUrl", !!paystackCallbackUrl);
 console.log("cloudinaryCloudName", !!cloudinaryCloudName);
 console.log("cloudinaryApiKey", !!cloudinaryApiKey);
 console.log("cloudinaryApiSecret", !!cloudinaryApiSecret);
+console.log("expoAccessToken", !!expoAccessToken);

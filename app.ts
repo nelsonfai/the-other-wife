@@ -27,6 +27,7 @@ import { orderRouter } from "./src/routes/order.route.js";
 import { vendorOnboardingRouter } from "./src/routes/vendor-onboarding.route.js";
 import { uploadRouter } from "./src/routes/upload.route.js";
 import { walletRouter } from "./src/routes/wallet.route.js";
+import "./src/signals/push-notification.signal.js";
 
 export class App {
   app: Express;

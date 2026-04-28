@@ -9,6 +9,8 @@ import Vendor from "../models/vendor.model.js";
 import User from "../models/user.model.js";
 import Order from "../models/order.model.js";
 import Payment from "../models/payment.model.js";
+import type { OrderDocument } from "../models/order.model.js";
+import type { PaymentDocument } from "../models/payment.model.js";
 import { BadRequestException } from "../errors/bad-request-exception.error.js";
 import { NotFoundException } from "../errors/not-found-exception.error.js";
 import { HttpStatus } from "../config/http.config.js";
@@ -17,6 +19,7 @@ import { transaction } from "../util/transaction.util.js";
 import { PaymentService } from "./payment.service.js";
 import { isVendorReceivingOrders } from "../util/vendor-opening-hours.util.js";
 import { WalletService } from "./wallet.service.js";
+import { appSignalDispatcher } from "../dispatcher/app-signal.dispatcher.js";
 
 type CheckoutPaymentProvider = "paystack" | "cash" | "wallet";
 
@@ -420,6 +423,14 @@ export class CheckoutService {
       },
     )(customerId, addressId, cartUpdatedAt);
 
+    await appSignalDispatcher.emit("order.created", {
+      orderId: order._id.toString(),
+      customerUserId: customerId,
+      vendorId: order.vendorId.toString(),
+      totalAmount: order.totalAmount,
+      currency: order.currency,
+    });
+
     if (paymentProvider === "cash") {
       const [updatedOrder, updatedPayment] = await Promise.all([
         Order.findByIdAndUpdate(
@@ -443,6 +454,16 @@ export class CheckoutService {
         ),
       ]);
 
+      if (updatedOrder) {
+        await appSignalDispatcher.emit("order.status_changed", {
+          orderId: updatedOrder._id.toString(),
+          customerUserId: updatedOrder.customerId.toString(),
+          vendorId: updatedOrder.vendorId.toString(),
+          previousStatus: "pending_payment",
+          currentStatus: "confirmed",
+        });
+      }
+
       return {
         order: updatedOrder,
         payment: updatedPayment,
@@ -452,7 +473,7 @@ export class CheckoutService {
 
     if (payment.amount <= 0) {
       const paidAt = new Date();
-      const [updatedOrder, updatedPayment] = await transaction.use(
+      const [updatedOrder, updatedPayment] = (await transaction.use(
         async (
           session: ClientSession,
           orderId: string,
@@ -497,7 +518,18 @@ export class CheckoutService {
 
           return [orderRecord, paymentRecord];
         },
-      )(order._id.toString(), payment._id.toString(), customerId);
+      )(order._id.toString(), payment._id.toString(), customerId) as unknown) as [
+        OrderDocument,
+        PaymentDocument,
+      ];
+
+      await appSignalDispatcher.emit("order.status_changed", {
+        orderId: updatedOrder._id.toString(),
+        customerUserId: updatedOrder.customerId.toString(),
+        vendorId: updatedOrder.vendorId.toString(),
+        previousStatus: "pending_payment",
+        currentStatus: "paid",
+      });
 
       return {
         order: updatedOrder,

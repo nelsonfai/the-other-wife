@@ -18,6 +18,7 @@ import {
 import { transaction } from "../util/transaction.util.js";
 import { PromoService } from "./promo.service.js";
 import { WalletService } from "./wallet.service.js";
+import { appSignalDispatcher } from "../dispatcher/app-signal.dispatcher.js";
 
 type InitializePaystackInput = {
   email: string;
@@ -156,7 +157,7 @@ export class PaymentService {
     }
 
     if (event.event === "charge.failed") {
-      return await transaction.use(
+      const result = await transaction.use(
         async (
           session: ClientSession,
           paymentId: string,
@@ -203,6 +204,18 @@ export class PaymentService {
           return { handled: true, payment: paymentRecord, order };
         },
       )(payment._id.toString(), event.data);
+
+      if (result.order) {
+        await appSignalDispatcher.emit("order.status_changed", {
+          orderId: result.order._id.toString(),
+          customerUserId: result.order.customerId.toString(),
+          vendorId: result.order.vendorId.toString(),
+          previousStatus: "pending_payment",
+          currentStatus: "payment_failed",
+        });
+      }
+
+      return result;
     }
 
     if (payment.status === "succeeded") {
@@ -219,7 +232,7 @@ export class PaymentService {
       );
     }
 
-    return await transaction.use(
+    const result = await transaction.use(
       async (session: ClientSession, paymentId: string, providerPayload: any) => {
         const paymentRecord = await Payment.findById(paymentId).session(session);
 
@@ -288,5 +301,17 @@ export class PaymentService {
         return { handled: true, payment: paymentRecord, order };
       },
     )(payment._id.toString(), event.data);
+
+    if (result.order) {
+      await appSignalDispatcher.emit("order.status_changed", {
+        orderId: result.order._id.toString(),
+        customerUserId: result.order.customerId.toString(),
+        vendorId: result.order.vendorId.toString(),
+        previousStatus: "pending_payment",
+        currentStatus: "paid",
+      });
+    }
+
+    return result;
   };
 }

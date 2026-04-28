@@ -29,6 +29,7 @@ type EnvConfig = {
   CLOUDINARY_CLOUD_NAME: string;
   CLOUDINARY_API_KEY: string;
   CLOUDINARY_API_SECRET: string;
+  EXPO_ACCESS_TOKEN?: string;
 };
 
 const getEnvConfig = (): EnvConfig => {
@@ -54,6 +55,7 @@ const getEnvConfig = (): EnvConfig => {
     CLOUDINARY_CLOUD_NAME: getEnv("CLOUDINARY_CLOUD_NAME"),
     CLOUDINARY_API_KEY: getEnv("CLOUDINARY_API_KEY"),
     CLOUDINARY_API_SECRET: getEnv("CLOUDINARY_API_SECRET"),
+    EXPO_ACCESS_TOKEN: getEnv("EXPO_ACCESS_TOKEN"),
   };
 };
 

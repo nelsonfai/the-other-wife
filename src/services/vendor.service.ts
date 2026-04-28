@@ -17,6 +17,7 @@ import {
   isVendorReceivingOrders,
   VendorOpeningHours,
 } from "../util/vendor-opening-hours.util.js";
+import { appSignalDispatcher } from "../dispatcher/app-signal.dispatcher.js";
 
 export class VendorService {
   private searchRadiusService: SearchRadiusService;
@@ -139,6 +140,12 @@ export class VendorService {
         ErrorCode.RESOURCE_NOT_FOUND,
       );
     }
+
+    await appSignalDispatcher.emit("vendor.approved", {
+      vendorId: vendor._id.toString(),
+      vendorUserId: vendor.userId.toString(),
+      approvedByUserId: userId,
+    });
 
     return { vendor };
   };

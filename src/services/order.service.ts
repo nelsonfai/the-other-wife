@@ -6,6 +6,7 @@ import { HttpStatus } from "../config/http.config.js";
 import { ErrorCode } from "../enums/error-code.enum.js";
 import { BadRequestException } from "../errors/bad-request-exception.error.js";
 import Vendor from "../models/vendor.model.js";
+import { appSignalDispatcher } from "../dispatcher/app-signal.dispatcher.js";
 
 export class OrderService {
   private getVendorByUserId = async (userId: string) => {
@@ -121,6 +122,14 @@ export class OrderService {
     order.status = "confirmed";
     await order.save();
 
+    await appSignalDispatcher.emit("order.status_changed", {
+      orderId: order._id.toString(),
+      customerUserId: order.customerId.toString(),
+      vendorId: order.vendorId.toString(),
+      previousStatus: "paid",
+      currentStatus: "confirmed",
+    });
+
     return { order };
   };
 
@@ -150,6 +159,14 @@ export class OrderService {
 
     order.status = "vendor_rejected";
     await order.save();
+
+    await appSignalDispatcher.emit("order.status_changed", {
+      orderId: order._id.toString(),
+      customerUserId: order.customerId.toString(),
+      vendorId: order.vendorId.toString(),
+      previousStatus: "paid",
+      currentStatus: "vendor_rejected",
+    });
 
     return { order };
   };
