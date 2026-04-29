@@ -86,7 +86,6 @@ export class VendorService {
           numberOfOrders,
         };
       })
-      .filter((vendor) => isVendorReceivingOrders(vendor))
       .sort((left, right) => {
         if (right.ratingScore !== left.ratingScore) {
           return right.ratingScore - left.ratingScore;
